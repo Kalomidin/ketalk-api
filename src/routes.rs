@@ -11,7 +11,7 @@ use diesel::{
   r2d2::{self, ConnectionManager},
 };
 
-use crate::repository::models;
+use crate::repository::models::{self, NewUserResponse};
 use crate::repository::db::{insert_new_user, get_user_by_id};
 
 type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
@@ -22,11 +22,12 @@ pub async fn heartbeat() -> Result<HttpResponse, Error> {
   Ok(HttpResponse::Ok().body("OK"))
 }
 
-#[post("/users/create")]
+#[post("/users/signup")]
 pub async fn create_user(
   pool: web::Data<DbPool>,
   form: web::Json<models::NewUserRequest>,
 ) -> Result<HttpResponse, Error> {
+  println!("received create request: {:?}", form);
 
   // save the user into the db
   let user = web::block(move || {
@@ -37,7 +38,13 @@ pub async fn create_user(
   .map_err(actix_web::error::ErrorUnprocessableEntity)?;
 
   // TODO: Return auth token
-  Ok(HttpResponse::Ok().json(user))
+  Ok(HttpResponse::Ok().json(NewUserResponse{
+    user_id: user.id,
+    user_name: user.user_name,
+    phone_number: user.phone_number,
+    auth_token: "".to_string(),
+    refresh_token: "".to_string(),
+  }))
 }
 
 #[get("/users/{user_id}")]

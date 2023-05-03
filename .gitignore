@@ -5,3 +5,4 @@ target/*
 # misc
 .DS_Store
 *.pem
+.env

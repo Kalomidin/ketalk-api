@@ -3,8 +3,8 @@ services:
   postgres:
     image: postgres:14
     environment:
-      - POSTGRES_USER=rustchatapp
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=chatapp
     ports:
       - "5243:5432"

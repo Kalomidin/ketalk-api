@@ -15,6 +15,8 @@ async fn main() -> std::io::Result<()> {
   
   // connect to postgres db
   let connection_manager = connection_manager();
+  // TODO: Run the migrations
+  
   let pool = r2d2::Pool::builder().build(connection_manager).expect("Failed to create pool.");
 
   let app = HttpServer::new(move || {
