@@ -1,0 +1,46 @@
+use actix_web::{get, post, web, Error, HttpRequest, HttpResponse, HttpMessage};
+use diesel::{
+  prelude::*,
+  r2d2::{self, ConnectionManager},
+};
+
+use super::models::{RefreshAuthTokenRequest, RefreshAuthTokenResponse};
+use crate::repository::auth::{insert_new_refresh_token, delete_refresh_token};
+use crate::auth::{create_jwt, get_new_refresh_token};
+use super::DbPool;
+
+#[post("/refreshAccessAuthToken")]
+pub async fn refresh_auth_token(
+    form: web::Json<RefreshAuthTokenRequest>,
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, Error> {
+
+    // invalidate old refresh access token
+    let pool_cloned: web::Data<r2d2::Pool<ConnectionManager<PgConnection>>> = pool.clone();
+    let user_id = form.user_id.to_owned();
+    let refresh_token = form.refresh_token.to_owned();
+    web::block(move || {
+        let mut conn = pool_cloned.get()?;
+        delete_refresh_token(&mut conn, user_id, &refresh_token)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+
+    // create new refresh access token
+    let pool_cloned: web::Data<r2d2::Pool<ConnectionManager<PgConnection>>> = pool.clone();
+    let new_refresh_token = web::block(move || {
+        let new_token = get_new_refresh_token();
+        let mut conn = pool_cloned.get()?;
+        insert_new_refresh_token(&mut conn, user_id, &new_token)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+
+    // create new jwt token and return
+    let auth_token = create_jwt(new_refresh_token.user_id)?;
+    Ok(HttpResponse::Ok().json(RefreshAuthTokenResponse {
+        refresh_token: new_refresh_token.token,
+        auth_token: auth_token,
+    }))
+}
+

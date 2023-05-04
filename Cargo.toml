@@ -14,8 +14,11 @@ rand = "0.8.5"
 serde = {version = "1.0.147", features = ["derive"]}
 serde_json = "1.0.88"
 uuid = { version = "1", features = ["v4", "serde"] }
-chrono = "0.4.23"
+chrono = { version = "0.4.23", features = ["serde"] }
 actix-cors = "0.6.4"
 postgres = "0.19.5"
 dotenv = "0.15.0"
-diesel = { version = "2.0.0", features = ["postgres", "r2d2"] }
+diesel = { version = "2.0.0", features = ["postgres", "r2d2", "chrono"] }
+jsonwebtoken = "8.3.0"
+actix-web-httpauth = "0.8.0"
+derive_more = "0.99.17"

@@ -1,18 +1,11 @@
 use diesel::{
     prelude::*,
-    r2d2::{ConnectionManager},
-};
-use uuid::Uuid;
-use std::{
-    collections::{HashMap, HashSet},
-    time::SystemTime,
+    r2d2::{self, ConnectionManager},
 };
 
-use crate::helpers::{iso_date, get_env};
-use super::models::{User, InsertUser};
-use crate::schema::users::dsl::*;
+use crate::helpers::get_env;
 
-type DbError = Box<dyn std::error::Error + Send + Sync>;
+pub type DbError = Box<dyn std::error::Error + Send + Sync>;
 
 pub fn connection_manager() -> ConnectionManager<PgConnection> {
     let db_url = get_db_url();
@@ -26,26 +19,4 @@ fn get_db_url() -> String {
     let postgres_db_port =  get_env("POSTGRES_DB_PORT");
     let postgres_db = get_env("POSTGRES_DB");
     format!("postgresql://{}:{}@localhost:{}/{}",postgres_user, postgres_pwd, postgres_db_port, postgres_db)
-}
-
-pub fn insert_new_user(conn: &mut PgConnection, nm: &str, pn: &str) -> Result<User, DbError> {
-
-    let new_user = InsertUser {
-        user_name: nm.to_owned(),
-        phone_number: pn.to_owned(),
-    };
-
-    let resp = diesel::insert_into(users).values(&new_user).get_result::<User>(conn)?;
-    return Ok(resp);
-}
-
-pub fn get_user_by_id(conn: &mut PgConnection, user_id: i64) -> Result<User, DbError> {
-    let user = users
-        .filter(id.eq(user_id))
-        .first::<User>(conn)
-        .optional()?;
-    match user {
-        Some(user) => Ok(user),
-        None => Err(Box::new(diesel::result::Error::NotFound)),
-    }
 }
