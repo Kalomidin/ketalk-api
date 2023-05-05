@@ -1,11 +1,12 @@
 use actix::prelude::{Actor, Context, Handler, Recipient};
 use std::collections::{HashMap, HashSet};
 
-use super::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
+use super::messages::{ClientActorMessage,  UserRooms, UserRoom, Connect, Disconnect, WsMessage, ClientWsMessage, ClientWsMessageType};
 use crate::routes::DbPool;
-use crate::repository::message::get_messages_for_room_id;
-use crate::repository::message::create_new_message_from_insert_struct;
-use crate::repository::message::InsertMessage;
+use crate::repository::room_member::{get_rooms_by_user_id};
+use crate::repository::message::{get_messages_for_room_id, create_new_message_from_insert_struct, get_last_message_by_room_id};
+use crate::repository::room::{get_room_by_name_and_creator, create_new_room};
+use crate::repository::message::{InsertMessage};
 use crate::helpers::new_naive_date;
 
 pub type Socket = Recipient<WsMessage>;
@@ -106,19 +107,27 @@ impl Handler<ClientActorMessage> for Lobby {
 
     fn handle(&mut self, msg: ClientActorMessage, _: &mut Context<Self>) -> Self::Result {
         let dt = new_naive_date();
-
-        let mes = InsertMessage {
-            room_id: msg.room_id,
-            sender_id: msg.user_id,
-            msg: msg.msg,
-            created_at: dt,
-            updated_at: dt,
-        };
-        let res = self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), Some(&msg.user_id));
-        if let Ok(mut conn)= self.pool.get() {
-            // TODO: make it async or use channel
-            create_new_message_from_insert_struct(&mut conn, mes);
+        if let Ok(received_msg) = serde_json::from_str::<ClientWsMessage>(&msg.msg) {
+            match received_msg.message_type {
+                // TODO: handle other types
+                _ => {
+                    let mes = InsertMessage {
+                        room_id: msg.room_id,
+                        sender_id: msg.user_id,
+                        msg: msg.msg,
+                        created_at: dt,
+                        updated_at: dt,
+                    };
+                    let res = self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), Some(&msg.user_id));
+                    
+                    if let Ok(mut conn)= self.pool.get() {
+                        // TODO: make it async or use channel
+                        create_new_message_from_insert_struct(&mut conn, mes);
+                    }
+                    return res;
+                }
+            }
         }
-        return res;
+        // TODO: Log err received invalid mes
     }
 }
