@@ -53,3 +53,18 @@ pub struct CreateRoomResponse {
     pub room_name: String,
     pub room_id: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct GetUserRoomsResponse {
+    pub rooms: Vec<UserRoom>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct UserRoom {
+    pub room_name: String,
+    pub last_message: String,
+    pub last_message_time: String,
+    pub last_message_sender_id: i64,
+}

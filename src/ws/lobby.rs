@@ -114,8 +114,11 @@ impl Handler<ClientActorMessage> for Lobby {
             created_at: dt,
             updated_at: dt,
         };
-        self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), Some(&msg.user_id));
-        let mut conn = self.pool.get().unwrap();
-        create_new_message_from_insert_struct(&mut conn, mes);
+        let res = self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), Some(&msg.user_id));
+        if let Ok(mut conn)= self.pool.get() {
+            // TODO: make it async or use channel
+            create_new_message_from_insert_struct(&mut conn, mes);
+        }
+        return res;
     }
 }

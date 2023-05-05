@@ -50,9 +50,22 @@ pub fn create_new_message_from_insert_struct(conn: &mut PgConnection, new_mes: I
 
 
 pub fn get_messages_for_room_id(conn: &mut PgConnection, rid: &i64) -> Result<Vec<Message>, DieselError> {
+
+    // TODO: Add pagination
     let cnv = message
         .filter(room_id.eq(rid).and(deleted_at.is_null()))
         .load(conn)
+        .optional()?;
+    match cnv {
+        Some(cnv) => Ok(cnv),
+        None => Err(DieselError::NotFound),
+    }
+}
+
+pub fn get_last_message_by_room_id(conn: &mut PgConnection, rid: &i64) -> Result<Message, DieselError> {
+    let cnv = message
+        .filter(room_id.eq(rid).and(deleted_at.is_null()))
+        .first(conn)
         .optional()?;
     match cnv {
         Some(cnv) => Ok(cnv),

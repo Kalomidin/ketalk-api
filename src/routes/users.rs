@@ -62,7 +62,7 @@ pub async fn get_user(
 ) -> Result<HttpResponse, Error> {
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
-
+  println!("getting the user");
   let user = web::block(move || {
     if let Ok(mut conn) = pool.get() {
       let user = get_user_by_id(&mut conn, user_id.to_owned())?;

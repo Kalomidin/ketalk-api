@@ -7,10 +7,11 @@ use diesel::result::Error as DieselError;
 
 use crate::ws::lobby::Lobby;
 use crate::ws::ws::WsConn;
-use crate::repository::room::{get_room_by_id, get_room_by_name_and_creator, create_new_room};
-use crate::repository::room_member::{create_new_room_member};
+use crate::repository::room::{get_room_by_name_and_creator, create_new_room};
+use crate::repository::room_member::{create_new_room_member, get_room_member, get_rooms_by_user_id};
+use crate::repository::message::{get_last_message_by_room_id};
 use super::DbPool;
-use super::models::{CreateRoomRequest, CreateRoomResponse};
+use super::models::{CreateRoomRequest, CreateRoomResponse, GetUserRoomsResponse, UserRoom};
 use super::RouteError;
 
 #[get("/room/join/{room_id}")]
@@ -21,7 +22,7 @@ pub async fn join_room(
     pool: Data<DbPool>,
     srv: Data<Addr<Lobby>>,
 ) -> Result<HttpResponse, Error> {
-    println!("it is coming to here inside the room");
+
     // TODO: validate conversation id exists in db
     let ext = req.extensions();
     let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
@@ -29,14 +30,14 @@ pub async fn join_room(
     let pool_cloned = pool.clone();
     block(move || {
         if let Ok(mut conn) = pool_cloned.get() {
-            let res = get_room_by_id(&mut conn, &rid)?;
-            return Ok(res);
+            get_room_member(&mut conn, &user_id, &rid)?;
+            return Ok(());
         }
         return Err(RouteError::PoolingErr);
       })
       .await?
       .map_err(actix_web::error::ErrorUnprocessableEntity)?;
-    println!("received new conn: {}", rid);
+
     let ws = WsConn::new(
         user_id,
         rid,
@@ -44,6 +45,47 @@ pub async fn join_room(
     );
     let resp = ws::start(ws, &req, stream)?;
     Ok(resp)
+}
+
+#[get("/room/getUserRooms")]
+pub async fn get_user_rooms(
+    pool: Data<DbPool>,
+    req: HttpRequest,
+) ->  Result<HttpResponse, Error> {
+    let ext = req.extensions();
+    let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+    let pool_cloned = pool.clone();
+    let resp = block(move || {
+        if let Ok(mut conn) = pool_cloned.get() {
+            let mut resp = GetUserRoomsResponse{
+                rooms: Vec::<UserRoom>::new(),
+            };
+            let rooms = get_rooms_by_user_id(&mut conn, &user_id)?;
+            // Get for each room last message
+            for room in rooms {
+                if let Ok(mes) = get_last_message_by_room_id(&mut conn, &room.room_id) {
+                    resp.rooms.push(UserRoom{
+                        room_name: room.room_name,
+                        last_message: mes.msg,
+                        last_message_time: mes.created_at.to_string(),
+                        last_message_sender_id: mes.sender_id,
+                    });
+                }
+            }
+            return Ok(resp)
+        }
+        return Err(RouteError::PoolingErr);        
+      })
+      .await?;
+    match resp {
+        Ok(rooms) => {
+            Ok(HttpResponse::Ok().json(rooms))
+        },
+        Err(e) => {
+            println!("error: {:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
+    }
 }
 
 #[post("/room/createRoom")]

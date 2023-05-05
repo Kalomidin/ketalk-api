@@ -9,7 +9,7 @@ pub mod users;
 pub mod heartbeat;
 pub mod auth;
 pub mod models;
-pub mod ws;
+pub mod room;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
