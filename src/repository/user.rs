@@ -1,12 +1,11 @@
 use diesel::{
     prelude::*,
 };
-
-use super::db::DbError;
+use diesel::result::Error as DieselError;
 use serde::{Deserialize, Serialize};
+
 use crate::schema::users as user_table;
 use crate::schema::users::dsl::*;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
 #[table_name="user_table"]
@@ -25,7 +24,7 @@ pub struct User {
     pub updated_at: chrono::NaiveDateTime,
 }
 
-pub fn insert_new_user(conn: &mut PgConnection, nm: &str, pn: &str) -> Result<User, DbError> {
+pub fn insert_new_user(conn: &mut PgConnection, nm: &str, pn: &str) -> Result<User, DieselError> {
 
     let new_user = InsertUser {
         user_name: nm.to_owned(),
@@ -36,13 +35,13 @@ pub fn insert_new_user(conn: &mut PgConnection, nm: &str, pn: &str) -> Result<Us
     return Ok(resp);
 }
 
-pub fn get_user_by_id(conn: &mut PgConnection, user_id: i64) -> Result<User, DbError> {
+pub fn get_user_by_id(conn: &mut PgConnection, user_id: i64) -> Result<User, DieselError> {
     let user = users
         .filter(id.eq(user_id))
         .first::<User>(conn)
         .optional()?;
     match user {
         Some(user) => Ok(user),
-        None => Err(Box::new(diesel::result::Error::NotFound)),
+        None => Err(diesel::result::Error::NotFound),
     }
 }

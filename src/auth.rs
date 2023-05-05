@@ -41,6 +41,7 @@ pub fn create_jwt(user_id: i64) -> Result<String, ServiceError> {
 }
 
 pub async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+    println!("validator for path: {}", req.path());
     let config = req
         .app_data::<Config>()
         .map(|data| data.clone())

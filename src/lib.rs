@@ -4,3 +4,4 @@ pub mod helpers;
 pub mod schema;
 pub mod auth;
 pub mod errors;
+pub mod ws;

@@ -3,10 +3,11 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 
+use diesel::result::Error as DieselError;
 use crate::helpers::new_naive_date;
 use crate::schema::refresh_token as refresh_token_table;
 use crate::schema::refresh_token::dsl::*;
-use super::db::DbError;
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
 #[table_name="refresh_token_table"]
@@ -29,7 +30,7 @@ pub struct RefreshToken {
 
 
 
-pub fn insert_new_refresh_token(conn: &mut PgConnection, requester_user_id: i64, refresh_access_token: &str) -> Result<RefreshToken, DbError> {
+pub fn insert_new_refresh_token(conn: &mut PgConnection, requester_user_id: i64, refresh_access_token: &str) -> Result<RefreshToken, DieselError> {
     let new_refresh_token = InsertRefreshToken {
         user_id: requester_user_id,
         token: refresh_access_token.to_owned(),
@@ -40,24 +41,23 @@ pub fn insert_new_refresh_token(conn: &mut PgConnection, requester_user_id: i64,
     return Ok(resp);
 }
 
-pub fn get_refresh_token(conn: &mut PgConnection, requester_user_id: i64, refresh_access_token: &str) -> Result<RefreshToken, DbError> {
+pub fn get_refresh_token(conn: &mut PgConnection, requester_user_id: i64, refresh_access_token: &str) -> Result<RefreshToken, DieselError> {
     let result = refresh_token
         .filter(deleted_at.is_null().and(user_id.eq(requester_user_id)).and(token.eq(refresh_access_token)))
         .first::<RefreshToken>(conn)
         .optional()?;
     match result {
         Some(val) => Ok(val),
-        None => Err(Box::new(diesel::result::Error::NotFound)),
+        None => Err(DieselError::NotFound),
     }
 }
 
-pub fn delete_refresh_token(conn: &mut PgConnection, requester_user_id: i64,  refresh_access_token: &str) -> Result<(), DbError> {
+pub fn delete_refresh_token(conn: &mut PgConnection, requester_user_id: i64,  refresh_access_token: &str) -> Result<(), DieselError> {
     let result = diesel::update(refresh_token)
     .filter(deleted_at.is_null().and(user_id.eq(requester_user_id)).and(token.eq(refresh_access_token)))
     .set(deleted_at.eq(new_naive_date())).execute(conn);
     if result.is_err() || result.unwrap() == 0 {
-        // TODO: return better error message
-        return Err(Box::new(diesel::result::Error::NotFound));
+        return Err(DieselError::NotFound);
     }
     Ok(())
 }
