@@ -18,15 +18,17 @@ pub struct WsConn {
   user_id: i64,
   hb: Instant,
   room: i64,
+  user_name: String,
   lobby_addr: Addr<Lobby>,
 }
 
 impl WsConn {
-    pub fn new(user_id: i64, room: i64, lobby_addr: Addr<Lobby>) -> Self {
+    pub fn new(user_id: i64, room: i64, user_name: String, lobby_addr: Addr<Lobby>) -> Self {
         Self {
             user_id,
             hb: Instant::now(),
             room,
+            user_name,
             lobby_addr,
         }
     }
@@ -73,27 +75,41 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
             Ok(ws::Message::Ping(msg)) => {
+                println!("received a mes ping");
                 self.hb = Instant::now();
                 ctx.pong(&msg);
             }
             Ok(ws::Message::Pong(_)) => {
+                println!("received a mes pong");
                 self.hb = Instant::now();
             }
-            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            Ok(ws::Message::Binary(bin)) => {
+                println!("received a mes binary");
+                ctx.binary(bin);
+            },
             Ok(ws::Message::Close(reason)) => {
+                println!("received a mes close");
                 ctx.close(reason);
                 ctx.stop();
             }
             Ok(ws::Message::Continuation(_)) => {
+                println!("received a mes continuation");
                 ctx.stop();
             }
-            Ok(ws::Message::Nop) => (),
-            Ok(Text(s)) => self.lobby_addr.do_send(ClientActorMessage {
-                user_id: self.user_id,
-                msg: s.to_string(),
-                room_id: self.room
-            }),
+            Ok(ws::Message::Nop) => {
+                println!("received a mes nop");
+            },
+            Ok(Text(s)) => {
+                println!("received msg: {}", s);
+                self.lobby_addr.do_send(ClientActorMessage {
+                    user_id: self.user_id,
+                    user_name: self.user_name.clone(),
+                    msg: s.to_string(),
+                    room_id: self.room
+                })
+            },
             Err(e) => {
+                println!("error handling message: {:?}", e);
                 // TODO: handle the error properly
                 ctx.stop();
                 return;

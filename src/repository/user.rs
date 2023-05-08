@@ -45,3 +45,15 @@ pub fn get_user_by_id(conn: &mut PgConnection, user_id: i64) -> Result<User, Die
         None => Err(diesel::result::Error::NotFound),
     }
 }
+
+
+pub fn get_user_by__username_and_phone_number(conn: &mut PgConnection, uname: &str, pnumber: &str) -> Result<User, DieselError> {
+    let user = users
+        .filter(user_name.eq(uname).and(phone_number.eq(pnumber)))
+        .first::<User>(conn)
+        .optional()?;
+    match user {
+        Some(user) => Ok(user),
+        None => Err(diesel::result::Error::NotFound),
+    }
+}

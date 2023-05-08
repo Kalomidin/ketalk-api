@@ -13,6 +13,7 @@ use crate::helpers::new_naive_date;
 pub struct InsertMessage {
     pub room_id: i64,
     pub sender_id: i64,
+    pub sender_name: String,
     pub msg: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
@@ -23,17 +24,19 @@ pub struct Message {
     pub id: i64,
     pub room_id: i64,
     pub sender_id: i64,
+    pub sender_name: String,
     pub msg: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
     pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
-pub fn create_new_message(conn: &mut PgConnection, rid: &i64, sid: &i64, mes: &str) -> Result<Message, DieselError> {
+pub fn create_new_message(conn: &mut PgConnection, rid: &i64, sid: &i64, sname: &str, mes: &str) -> Result<Message, DieselError> {
     let dt = new_naive_date();
     let new_mes = InsertMessage {
         room_id: rid.to_owned(),
         sender_id: sid.to_owned(),
+        sender_name: sname.to_owned(),
         msg: mes.to_owned(),
         created_at: dt,
         updated_at: dt,
@@ -43,7 +46,15 @@ pub fn create_new_message(conn: &mut PgConnection, rid: &i64, sid: &i64, mes: &s
     return Ok(resp);
 }
 
-pub fn create_new_message_from_insert_struct(conn: &mut PgConnection, new_mes: InsertMessage) -> Result<Message, DieselError> {
+pub fn create_new_message_with_date(conn: &mut PgConnection, rid: &i64, sid: &i64, sname: &str, mes: &str, dt:chrono::NaiveDateTime) -> Result<Message, DieselError> {
+    let new_mes = InsertMessage {
+        room_id: rid.to_owned(),
+        sender_id: sid.to_owned(),
+        sender_name: sname.to_owned(),
+        msg: mes.to_owned(),
+        created_at: dt,
+        updated_at: dt,
+    };
     let resp = diesel::insert_into(message).values(&new_mes).get_result::<Message>(conn)?;
     return Ok(resp);
 }
@@ -65,6 +76,7 @@ pub fn get_messages_for_room_id(conn: &mut PgConnection, rid: &i64) -> Result<Ve
 pub fn get_last_message_by_room_id(conn: &mut PgConnection, rid: &i64) -> Result<Message, DieselError> {
     let cnv = message
         .filter(room_id.eq(rid).and(deleted_at.is_null()))
+        .order(created_at.desc())
         .first(conn)
         .optional()?;
     match cnv {

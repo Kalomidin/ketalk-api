@@ -67,4 +67,19 @@ pub struct UserRoom {
     pub last_message: String,
     pub last_message_time: String,
     pub last_message_sender_id: i64,
+    pub room_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct SiginRequest {
+    pub user_name: String,
+    pub phone_number: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct LogoutRequest {
+    pub refresh_token: String,
 }

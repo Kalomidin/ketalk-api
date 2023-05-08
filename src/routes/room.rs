@@ -5,6 +5,7 @@ use actix_web_actors::ws;
 use diesel::result;
 use diesel::result::Error as DieselError;
 
+use crate::repository::user::get_user_by_id;
 use crate::ws::lobby::Lobby;
 use crate::ws::ws::WsConn;
 use crate::repository::room::{get_room_by_name_and_creator, create_new_room};
@@ -18,20 +19,34 @@ use super::RouteError;
 pub async fn join_room(
     req: HttpRequest,
     stream: Payload,
-    room_id: Path<i64>,
+    room_id: Path<String>,
     pool: Data<DbPool>,
     srv: Data<Addr<Lobby>>,
 ) -> Result<HttpResponse, Error> {
-
+    println!("join_room: ${}", room_id);
+    req.headers().iter().for_each(|(key, value)| {
+        println!("{}: {}", key, value.to_str().unwrap());
+    });
     // TODO: validate conversation id exists in db
     let ext = req.extensions();
     let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
-    let rid = room_id.into_inner();
+    let rid_string = room_id.into_inner().clone();
+    let rid = if rid_string.contains('#') {
+        rid_string[0..rid_string.len()-1].parse::<i64>()
+    } else {
+        rid_string.parse::<i64>()
+    };
+    let rid = if let Ok(rid) = rid {
+        rid
+    } else {
+        return Ok(HttpResponse::BadRequest().finish())
+    };
     let pool_cloned = pool.clone();
-    block(move || {
+    let user = block(move || {
         if let Ok(mut conn) = pool_cloned.get() {
             get_room_member(&mut conn, &user_id, &rid)?;
-            return Ok(());
+            let user = get_user_by_id(&mut conn, user_id)?;
+            return Ok(user)
         }
         return Err(RouteError::PoolingErr);
       })
@@ -39,8 +54,9 @@ pub async fn join_room(
       .map_err(actix_web::error::ErrorUnprocessableEntity)?;
 
     let ws = WsConn::new(
-        user_id,
+        user.id,
         rid,
+        user.user_name,
         srv.get_ref().clone(),
     );
     let resp = ws::start(ws, &req, stream)?;
@@ -54,6 +70,8 @@ pub async fn get_user_rooms(
 ) ->  Result<HttpResponse, Error> {
     let ext = req.extensions();
     let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+    println!("get_user_rooms: ${}", user_id);
+
     let pool_cloned = pool.clone();
     let resp = block(move || {
         if let Ok(mut conn) = pool_cloned.get() {
@@ -69,6 +87,7 @@ pub async fn get_user_rooms(
                         last_message: mes.msg,
                         last_message_time: mes.created_at.to_string(),
                         last_message_sender_id: mes.sender_id,
+                        room_id: room.room_id,
                     });
                 }
             }

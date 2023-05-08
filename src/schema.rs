@@ -5,6 +5,7 @@ diesel::table! {
         id -> Int8,
         room_id -> Int8,
         sender_id -> Int8,
+        sender_name -> Varchar,
         msg -> Text,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,

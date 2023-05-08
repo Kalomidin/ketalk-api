@@ -16,6 +16,7 @@ pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Debug)]
 pub enum RouteError {
     DbError(DieselError),
+    CreateJwtErr,
     PoolingErr
 }
 

@@ -27,15 +27,17 @@ pub struct Disconnect {
 #[rtype(result = "()")]
 pub struct ClientActorMessage {
     pub user_id: i64,
+    pub user_name: String,
     pub msg: String,
     pub room_id: i64
 }
 
 #[derive(Message, Serialize, Deserialize)]
 #[rtype(result = "()")]
+#[serde(rename_all(deserialize = "camelCase"))]
 pub struct ClientWsMessage {
     pub message_type: ClientWsMessageType,
-    pub data: String
+    pub message: String
 }
 
 #[derive(Message, Serialize, Deserialize)]
@@ -46,6 +48,20 @@ pub enum ClientWsMessageType {
     MessageDelete,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct ServerActorMessages {
+    pub messages: Vec<ServerActorMessage>
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct ServerActorMessage {
+    pub message: String,
+    pub sender_name: String,
+    pub sender_id: i64,
+    pub created_at: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]

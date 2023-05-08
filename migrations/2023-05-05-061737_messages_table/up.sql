@@ -4,6 +4,7 @@ CREATE TABLE message (
   room_id bigint NOT NULL  REFERENCES room(id),
   --- sender_id is the user who sent the message
   sender_id bigint NOT NULL  REFERENCES users(id),
+  sender_name varchar(255) NOT NULL,
   --- sender message
   msg text NOT NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,

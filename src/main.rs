@@ -4,10 +4,10 @@ use dotenv::dotenv;
 use diesel::r2d2;
 
 use rust_chat_app::helpers::{get_env};
-use rust_chat_app::routes::users::{signup, get_user};
+use rust_chat_app::routes::users::{signup, get_user, signin};
 use rust_chat_app::routes::heartbeat::{heartbeat};
 use rust_chat_app::routes::room::{join_room, create_room, get_user_rooms};
-use rust_chat_app::routes::auth::{refresh_auth_token};
+use rust_chat_app::routes::auth::{logout, refresh_auth_token};
 use rust_chat_app::repository::db::{connection_manager};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use rust_chat_app::auth::validator;
@@ -44,6 +44,7 @@ async fn main() -> std::io::Result<()> {
       .app_data(web::Data::new(chat_server.clone()))
       .wrap(cors)
       .service(heartbeat)
+      .service(signin)
       .service(signup)
       .service(refresh_auth_token)
       // .service(web::scope("").wrap(bearer_middleware.clone()).service())
@@ -51,6 +52,7 @@ async fn main() -> std::io::Result<()> {
         .service(get_user)
         .service(create_room)
         .service(join_room)
+        .service(logout)
         .service(get_user_rooms)
       )
   })
