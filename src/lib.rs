@@ -5,3 +5,4 @@ pub mod schema;
 pub mod auth;
 pub mod errors;
 pub mod ws;
+pub mod s3_bucket;

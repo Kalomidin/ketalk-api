@@ -10,6 +10,7 @@ pub mod heartbeat;
 pub mod auth;
 pub mod models;
 pub mod room;
+pub mod s3_bucket;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

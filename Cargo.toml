@@ -22,3 +22,4 @@ diesel = { version = "2.0.0", features = ["postgres", "r2d2", "chrono"] }
 jsonwebtoken = "8.3.0"
 actix-web-httpauth = "0.8.0"
 derive_more = "0.99.17"
+rust-s3 = "0.33.0"

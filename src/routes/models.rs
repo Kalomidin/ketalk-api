@@ -83,3 +83,23 @@ pub struct SiginRequest {
 pub struct LogoutRequest {
     pub refresh_token: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct CreatePresignedUrlsRequest {
+    pub file_names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct CreatePresignedUrlsResponse {
+    pub presigned_urls: Vec<PresignedUrl>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct PresignedUrl {
+    pub key: String,
+    pub url: String,
+    pub file_name: String,
+}
