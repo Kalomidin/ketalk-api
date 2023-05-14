@@ -7,12 +7,15 @@ use diesel::result::Error as DieselError;
 use super::models::{CreateRoomRequest, CreateRoomResponse, GetUserRoomsResponse, UserRoom};
 use super::DbPool;
 use super::RouteError;
+use crate::repository::document::get_cover_pic_for_item;
+use crate::repository::item::get_item_by_id;
 use crate::repository::message::get_last_message_by_room_id;
-use crate::repository::room::{create_new_room, get_room_by_name_and_creator};
+use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
 use crate::repository::room_member::{
   create_new_room_member, get_room_member, get_rooms_by_user_id,
 };
 use crate::repository::user::get_user_by_id;
+use crate::routes::item::CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME;
 use crate::ws::lobby::Lobby;
 use crate::ws::ws::WsConn;
 
@@ -74,9 +77,19 @@ pub async fn get_user_rooms(pool: Data<DbPool>, req: HttpRequest) -> Result<Http
       let rooms = get_rooms_by_user_id(&mut conn, &user_id)?;
       // Get for each room last message
       for room in rooms {
+        if room.item_id == None {
+          continue;
+        }
+        let item_id = room.item_id.unwrap();
         if let Ok(mes) = get_last_message_by_room_id(&mut conn, &room.room_id) {
+          let item = get_item_by_id(&mut conn, item_id)?;
+          let cover_image_doc = get_cover_pic_for_item(&mut conn, item.id)?;
           resp.rooms.push(UserRoom {
-            room_name: room.room_name,
+            room_name: item.description,
+            room_image_url: format!(
+              "https://{}/{}",
+              CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, cover_image_doc.key,
+            ),
             last_message: mes.msg,
             last_message_time: mes.created_at.to_string(),
             last_message_sender_id: mes.sender_id,
@@ -106,7 +119,7 @@ pub async fn create_room(
 ) -> Result<HttpResponse, Error> {
   println!("creating new room");
   let secondary_user_id = form.secondary_user_id.clone();
-  let room_name = form.room_name.clone();
+  let item_id = form.item_id.clone();
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
 
@@ -114,12 +127,12 @@ pub async fn create_room(
   let pool_cloned = pool.clone();
   let resp = block(move || {
     if let Ok(mut conn) = pool_cloned.get() {
-      match get_room_by_name_and_creator(&mut conn, &user_id, &secondary_user_id, &room_name) {
+      match get_room_by_item_and_creator(&mut conn, &user_id, &secondary_user_id, &item_id) {
         Ok(res) => {
           return Ok(res);
         }
         Err(DieselError::NotFound) => {
-          let room = create_new_room(&mut conn, &user_id, &room_name)?;
+          let room = create_new_room(&mut conn, &user_id, &item_id)?;
           create_new_room_member(&mut conn, &room.id, &user_id)?;
           create_new_room_member(&mut conn, &room.id, &secondary_user_id)?;
           return Ok(room);
@@ -135,7 +148,7 @@ pub async fn create_room(
   match resp {
     Ok(room) => Ok(HttpResponse::Ok().json(CreateRoomResponse {
       room_id: room.id,
-      room_name: room.name,
+      item_id: item_id,
       secondary_user_id: secondary_user_id,
     })),
     Err(e) => {

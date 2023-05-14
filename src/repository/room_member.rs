@@ -25,7 +25,7 @@ pub struct RoomMember {
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct RoomNameWithMember {
   pub room_id: i64,
-  pub room_name: String,
+  pub item_id: Option<i64>,
   pub member_id: i64,
 }
 
@@ -55,7 +55,7 @@ pub fn get_rooms_by_user_id(
 ) -> Result<Vec<RoomNameWithMember>, DieselError> {
   let cnv = room_member
     .inner_join(room_dsl::room)
-    .select((room_dsl::id, room_dsl::name, member_id))
+    .select((room_dsl::id, room_dsl::item_id, member_id))
     .filter(
       member_id
         .eq(mid)

@@ -9,13 +9,13 @@ use crate::schema::room::dsl::*;
 #[table_name = "room_table"]
 pub struct InsertRoom {
   created_by: i64,
-  name: String,
+  item_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct Room {
   pub id: i64,
-  pub name: String,
+  pub item_id: Option<i64>,
   pub created_by: i64,
   pub created_at: chrono::NaiveDateTime,
   pub deleted_at: Option<chrono::NaiveDateTime>,
@@ -24,11 +24,11 @@ pub struct Room {
 pub fn create_new_room(
   conn: &mut PgConnection,
   creator: &i64,
-  room_name: &str,
+  _item_id: &i64,
 ) -> Result<Room, DieselError> {
   let new_room = InsertRoom {
     created_by: creator.to_owned(),
-    name: room_name.to_owned(),
+    item_id: _item_id.to_owned(),
   };
 
   let resp = diesel::insert_into(room)
@@ -48,16 +48,16 @@ pub fn get_room_by_id(conn: &mut PgConnection, room_id: &i64) -> Result<Room, Di
   }
 }
 
-pub fn get_room_by_name_and_creator(
+pub fn get_room_by_item_and_creator(
   conn: &mut PgConnection,
   primary_user_id: &i64,
   secondary_user_id: &i64,
-  room_name: &str,
+  _item_id: &i64,
 ) -> Result<Room, DieselError> {
   let result = room
     .filter(
-      name
-        .eq(room_name)
+      item_id
+        .eq(_item_id)
         .and(
           created_by
             .eq(primary_user_id)

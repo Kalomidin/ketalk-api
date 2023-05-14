@@ -77,3 +77,22 @@ pub fn get_docs_for_item(conn: &mut PgConnection, iid: i64) -> Result<Vec<Docume
     None => Err(DieselError::NotFound),
   }
 }
+
+pub fn get_cover_pic_for_item(
+  conn: &mut PgConnection,
+  _item_id: i64,
+) -> Result<Document, DieselError> {
+  let doc = item_document
+    .filter(
+      item_id
+        .eq(_item_id)
+        .and(is_cover.eq(true))
+        .and(deleted_at.is_null()),
+    )
+    .first::<Document>(conn)
+    .optional()?;
+  match doc {
+    Some(doc) => Ok(doc),
+    None => Err(DieselError::NotFound),
+  }
+}

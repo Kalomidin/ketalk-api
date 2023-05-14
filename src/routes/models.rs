@@ -43,14 +43,14 @@ pub struct RefreshAuthTokenResponse {
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct CreateRoomRequest {
   pub secondary_user_id: i64,
-  pub room_name: String,
+  pub item_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct CreateRoomResponse {
   pub secondary_user_id: i64,
-  pub room_name: String,
+  pub item_id: i64,
   pub room_id: i64,
 }
 
@@ -64,6 +64,7 @@ pub struct GetUserRoomsResponse {
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct UserRoom {
   pub room_name: String,
+  pub room_image_url: String,
   pub last_message: String,
   pub last_message_time: String,
   pub last_message_sender_id: i64,
@@ -148,8 +149,11 @@ pub struct GetItemResponse {
   pub id: i64,
   pub details: String,
   pub description: String,
-  pub price: i32,
+  pub price: i64,
   pub owner_id: i64,
+  pub favorite_count: i32,
+  pub message_count: i32,
+  pub seen_count: i32,
   pub created_at: String,
   pub cover_image_url: String,
 }
@@ -160,14 +164,15 @@ pub struct ItemResponse {
   pub id: i64,
   pub details: String,
   pub description: String,
-  pub price: i32,
+  pub price: i64,
   pub owner_id: i64,
   pub owner_name: String,
   pub owner_location: Option<Location>,
   pub owner_image_url: String,
   pub negotiable: bool,
-  pub favorite_count: i64,
-  pub message_count: i64,
+  pub favorite_count: i32,
+  pub message_count: i32,
+  pub seen_count: i32,
   pub created_at: String,
   pub presigned_urls: Vec<String>,
   pub location: Option<Location>,

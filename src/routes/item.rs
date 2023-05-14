@@ -12,7 +12,7 @@ use crate::repository::item::{get_all, get_item_by_id, insert_new_item};
 use crate::repository::user::get_user_by_id;
 
 const GET_IMAGE_EXPIRATION_SECONDS: u32 = 200;
-const CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME: &str = "d1a8cs8n1a8sq9.cloudfront.net";
+pub const CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME: &str = "d1a8cs8n1a8sq9.cloudfront.net";
 
 #[post("/item/create")]
 pub async fn create_item(
@@ -69,14 +69,20 @@ pub async fn get_items(
       let mut resp = GetItemsResponse { items: vec![] };
       let items = get_all(&mut conn)?;
       for item in items {
+        if item.owner_id == user_id {
+          continue;
+        }
         let docs = get_docs_for_item(&mut conn, item.id)?;
         for doc in docs {
           if doc.is_cover && doc.uploaded_to_cloud {
             resp.items.push(GetItemResponse {
               id: item.id,
-              price: 0,
+              price: item.price,
               details: "".to_string(),
               description: item.description,
+              favorite_count: item.favorite_count,
+              message_count: item.message_count,
+              seen_count: item.seen_count,
               owner_id: item.owner_id,
               created_at: item.created_at.to_string(),
               // TODO: create presigned url for cloudfront
@@ -115,16 +121,17 @@ pub async fn get_item(
 
       let mut resp = ItemResponse {
         id: item.id,
-        price: 0,
-        details: "".to_string(),
+        price: item.price,
+        details: item.details,
         description: item.description,
         owner_id: item.owner_id,
         owner_name: item_owner.user_name,
         owner_location: None,
         owner_image_url: "".to_string(),
-        favorite_count: 0,
+        favorite_count: item.favorite_count,
         negotiable: item.negotiable,
-        message_count: 0,
+        message_count: item.message_count,
+        seen_count: item.seen_count,
         created_at: item.created_at.to_string(),
         presigned_urls: vec![],
         location: None,

@@ -10,7 +10,7 @@ use crate::repository::message::InsertMessage;
 use crate::repository::message::{
   create_new_message_with_date, get_last_message_by_room_id, get_messages_for_room_id,
 };
-use crate::repository::room::{create_new_room, get_room_by_name_and_creator};
+use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
 use crate::repository::room_member::get_rooms_by_user_id;
 use crate::routes::DbPool;
 
