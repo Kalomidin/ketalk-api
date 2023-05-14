@@ -1,4 +1,6 @@
-use actix_web::{get, post, web, Error, http::header, HttpRequest, HttpResponse, Responder, HttpMessage};
+use actix_web::{
+  get, http::header, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
+};
 
 #[get("/heartbeat")]
 pub async fn heartbeat() -> Result<HttpResponse, Error> {

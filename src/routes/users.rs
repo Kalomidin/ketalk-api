@@ -1,11 +1,13 @@
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 
-use super::models::{NewUserRequest, SiginRequest, NewUserResponse, GetUserResponse};
-use crate::auth::{create_jwt, get_new_refresh_token};
-use crate::repository::auth::insert_new_refresh_token;
-use crate::repository::user::{get_user_by__username_and_phone_number, insert_new_user, get_user_by_id};
+use super::models::{GetUserResponse, NewUserRequest, NewUserResponse, SiginRequest};
 use super::DbPool;
 use super::RouteError;
+use crate::auth::{create_jwt, get_new_refresh_token};
+use crate::repository::auth::insert_new_refresh_token;
+use crate::repository::user::{
+  get_user_by__username_and_phone_number, get_user_by_id, insert_new_user,
+};
 
 #[post("/users/signup")]
 pub async fn signup(
@@ -32,7 +34,7 @@ pub async fn signup(
     // create new refresh token
     let pool_cloned = pool.clone();
     let refresh_token = web::block(move || {
-      let new_token = get_new_refresh_token();      
+      let new_token = get_new_refresh_token();
       if let Ok(mut conn) = pool_cloned.get() {
         let user = insert_new_refresh_token(&mut conn, user.id, &new_token)?;
         return Ok(user);
@@ -42,7 +44,7 @@ pub async fn signup(
     .await?
     .map_err(actix_web::error::ErrorUnprocessableEntity)?;
 
-    Ok(HttpResponse::Ok().json(NewUserResponse{
+    Ok(HttpResponse::Ok().json(NewUserResponse {
       user_id: user.id,
       user_name: user.user_name,
       phone_number: user.phone_number,
@@ -70,10 +72,10 @@ pub async fn signin(
       let user = get_user_by__username_and_phone_number(&mut conn, &user_name, &phone_number)?;
       if let Ok(auth_token) = create_jwt(user.id) {
         // create new refresh token
-        let new_token = get_new_refresh_token();      
+        let new_token = get_new_refresh_token();
         let refresh_token = insert_new_refresh_token(&mut conn, user.id, &new_token)?;
 
-        return Ok(NewUserResponse{
+        return Ok(NewUserResponse {
           user_id: user.id,
           user_name: user.user_name,
           phone_number: user.phone_number,
@@ -92,12 +94,8 @@ pub async fn signin(
   Ok(HttpResponse::Ok().json(resp))
 }
 
-
 #[get("/users")]
-pub async fn get_user(
-  pool: web::Data<DbPool>,
-  req: HttpRequest,
-) -> Result<HttpResponse, Error> {
+pub async fn get_user(pool: web::Data<DbPool>, req: HttpRequest) -> Result<HttpResponse, Error> {
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
   println!("getting the user");
@@ -106,7 +104,7 @@ pub async fn get_user(
       let user = get_user_by_id(&mut conn, user_id.to_owned())?;
       return Ok(user);
     }
-    return Err(RouteError::PoolingErr);    
+    return Err(RouteError::PoolingErr);
   })
   .await?
   .map_err(actix_web::error::ErrorUnprocessableEntity)?;
