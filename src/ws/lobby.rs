@@ -11,7 +11,7 @@ use crate::repository::message::{
   create_new_message_with_date, get_last_message_by_room_id, get_messages_for_room_id,
 };
 use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
-use crate::repository::room_member::get_rooms_by_user_id;
+use crate::repository::room_member::{get_rooms_by_user_id, set_last_joined_at};
 use crate::routes::DbPool;
 
 pub type Socket = Recipient<WsMessage>;
@@ -134,37 +134,46 @@ impl Handler<ClientActorMessage> for Lobby {
   type Result = ();
 
   fn handle(&mut self, msg: ClientActorMessage, _: &mut Context<Self>) -> Self::Result {
-    match serde_json::from_str::<ClientWsMessage>(&msg.msg) {
-      Ok(received_msg) => match received_msg.message_type {
-        // TODO: handle other types
-        _ => {
-          let dt = new_naive_date();
-          let mes = ServerActorMessages {
-            messages: vec![ServerActorMessage {
-              message: received_msg.message.clone(),
-              sender_name: msg.user_name.clone(),
-              sender_id: msg.user_id,
-              created_at: dt.to_string(),
-            }],
-          };
-          let res = self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), None);
-
-          if let Ok(mut conn) = self.pool.get() {
-            // TODO: make it async or use channel
-            create_new_message_with_date(
-              &mut conn,
-              &msg.room_id,
-              &msg.user_id,
-              &msg.user_name,
-              &received_msg.message,
-              dt,
+    let received_msg = msg.msg;
+    match received_msg.message_type {
+      // TODO: handle other types
+      ClientWsMessageType::Closed => {
+        match set_last_joined_at(&mut self.pool.get().unwrap(), &msg.user_id, &msg.room_id) {
+          Ok(_) => {
+            println!("success on updating last joined at");
+          }
+          Err(e) => {
+            println!(
+              "failed to set last joined at: ${e}, {0}, {1}",
+              msg.room_id, msg.user_id
             );
           }
-          return res;
         }
-      },
-      Err(e) => {
-        println!("Received err while parsing message: {}", e);
+      }
+      _ => {
+        let dt = new_naive_date();
+        let mes = ServerActorMessages {
+          messages: vec![ServerActorMessage {
+            message: received_msg.message.clone(),
+            sender_name: msg.user_name.clone(),
+            sender_id: msg.user_id,
+            created_at: dt.to_string(),
+          }],
+        };
+        let res = self.send_message(&msg.room_id, &serde_json::to_string(&mes).unwrap(), None);
+
+        if let Ok(mut conn) = self.pool.get() {
+          // TODO: make it async or use channel
+          create_new_message_with_date(
+            &mut conn,
+            &msg.room_id,
+            &msg.user_id,
+            &msg.user_name,
+            &received_msg.message,
+            dt,
+          );
+        }
+        return res;
       }
     }
     // TODO: Log err received invalid mes

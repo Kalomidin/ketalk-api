@@ -63,12 +63,15 @@ pub struct GetUserRoomsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct UserRoom {
-  pub room_name: String,
-  pub room_image_url: String,
+  pub description: String,
   pub last_message: String,
-  pub last_message_time: String,
-  pub last_message_sender_id: i64,
+  pub last_message_time: chrono::NaiveDateTime,
   pub room_id: i64,
+  pub last_message_sender_id: i64,
+  pub secondary_user_image_url: String,
+  pub item_id: i64,
+  pub item_image_url: String,
+  pub is_message_read: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,4 +186,31 @@ pub struct ItemResponse {
 pub struct Location {
   pub latitude: f64,
   pub longitude: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct UserItems {
+  pub items: Vec<UserItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct UserItem {
+  pub id: i64,
+  pub item_name: String,
+  pub image: String,
+  pub price: i64,
+  pub favorite_count: i32,
+  pub message_count: i32,
+  pub item_status: ItemStatus,
+  pub created_at: chrono::NaiveDateTime,
+  pub updated_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ItemStatus {
+  Active,
+  Sold,
+  Deleted,
 }

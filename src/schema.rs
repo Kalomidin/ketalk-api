@@ -70,6 +70,7 @@ diesel::table! {
         room_id -> Int8,
         member_id -> Int8,
         created_at -> Timestamptz,
+        last_joined_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
     }
 }
@@ -96,11 +97,11 @@ diesel::joinable!(room_member -> room (room_id));
 diesel::joinable!(room_member -> users (member_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-  item,
-  item_document,
-  message,
-  refresh_token,
-  room,
-  room_member,
-  users,
+    item,
+    item_document,
+    message,
+    refresh_token,
+    room,
+    room_member,
+    users,
 );

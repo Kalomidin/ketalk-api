@@ -28,7 +28,7 @@ pub struct Disconnect {
 pub struct ClientActorMessage {
   pub user_id: i64,
   pub user_name: String,
-  pub msg: String,
+  pub msg: ClientWsMessage,
   pub room_id: i64,
 }
 
@@ -44,6 +44,7 @@ pub struct ClientWsMessage {
 #[rtype(result = "()")]
 pub enum ClientWsMessageType {
   Message,
+  Closed,
   Editing,
   MessageDelete,
 }

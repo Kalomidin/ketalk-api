@@ -8,7 +8,9 @@ use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use super::lobby::Lobby;
-use super::messages::{ClientActorMessage, Connect, Disconnect, WsMessage};
+use super::messages::{
+  ClientActorMessage, ClientWsMessage, ClientWsMessageType, Connect, Disconnect, WsMessage,
+};
 
 // TODO: move to env
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -84,7 +86,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
         ctx.pong(&msg);
       }
       Ok(ws::Message::Pong(_)) => {
-        println!("received a mes pong");
         self.hb = Instant::now();
       }
       Ok(ws::Message::Binary(bin)) => {
@@ -95,6 +96,15 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
         println!("received a mes close");
         ctx.close(reason);
         ctx.stop();
+        self.lobby_addr.do_send(ClientActorMessage {
+          user_id: self.user_id,
+          user_name: self.user_name.clone(),
+          msg: ClientWsMessage {
+            message_type: ClientWsMessageType::Closed,
+            message: "".to_string(),
+          },
+          room_id: self.room,
+        })
       }
       Ok(ws::Message::Continuation(_)) => {
         println!("received a mes continuation");
@@ -105,12 +115,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsConn {
       }
       Ok(Text(s)) => {
         println!("received msg: {}", s);
-        self.lobby_addr.do_send(ClientActorMessage {
-          user_id: self.user_id,
-          user_name: self.user_name.clone(),
-          msg: s.to_string(),
-          room_id: self.room,
-        })
+        match serde_json::from_str::<ClientWsMessage>(&s) {
+          Ok(m) => self.lobby_addr.do_send(ClientActorMessage {
+            user_id: self.user_id,
+            user_name: self.user_name.clone(),
+            msg: m,
+            room_id: self.room,
+          }),
+          _ => {
+            println!("error parsing message");
+            ctx.stop();
+            return;
+          }
+        }
       }
       Err(e) => {
         println!("error handling message: {:?}", e);

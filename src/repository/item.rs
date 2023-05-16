@@ -55,7 +55,7 @@ pub fn insert_new_item(
   return Ok(resp);
 }
 
-pub fn get_item_by_user_id(
+pub fn get_items_by_user_id(
   conn: &mut PgConnection,
   user_id: i64,
 ) -> Result<Vec<Item>, DieselError> {

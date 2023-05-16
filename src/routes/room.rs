@@ -12,7 +12,7 @@ use crate::repository::item::get_item_by_id;
 use crate::repository::message::get_last_message_by_room_id;
 use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
 use crate::repository::room_member::{
-  create_new_room_member, get_room_member, get_rooms_by_user_id,
+  create_new_room_member, get_room_member, get_rooms_by_user_id, set_last_joined_at,
 };
 use crate::repository::user::get_user_by_id;
 use crate::routes::item::CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME;
@@ -49,6 +49,7 @@ pub async fn join_room(
   let user = block(move || {
     if let Ok(mut conn) = pool_cloned.get() {
       get_room_member(&mut conn, &user_id, &rid)?;
+      set_last_joined_at(&mut conn, &user_id, &rid)?;
       let user = get_user_by_id(&mut conn, user_id)?;
       return Ok(user);
     }
@@ -85,15 +86,21 @@ pub async fn get_user_rooms(pool: Data<DbPool>, req: HttpRequest) -> Result<Http
           let item = get_item_by_id(&mut conn, item_id)?;
           let cover_image_doc = get_cover_pic_for_item(&mut conn, item.id)?;
           resp.rooms.push(UserRoom {
-            room_name: item.description,
-            room_image_url: format!(
+            description: item.description,
+            item_image_url: format!(
               "https://{}/{}",
               CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, cover_image_doc.key,
             ),
+            secondary_user_image_url: format!(
+              "https://{}/{}",
+              CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, cover_image_doc.key,
+            ),
+            item_id: item.id,
             last_message: mes.msg,
-            last_message_time: mes.created_at.to_string(),
+            last_message_time: mes.created_at,
             last_message_sender_id: mes.sender_id,
             room_id: room.room_id,
+            is_message_read: mes.sender_id == user_id || mes.created_at <= room.last_joined_at,
           });
         }
       }
