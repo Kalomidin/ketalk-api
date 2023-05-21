@@ -6,8 +6,8 @@ use super::models::{
 };
 use super::DbPool;
 use super::RouteError;
-use crate::helpers::get_timestamp_as_nano;
-use crate::repository::document::{get_docs_for_item, insert_new_document};
+
+use crate::repository::document::{get_docs_for_item};
 use crate::repository::item::{get_all, get_item_by_id, insert_new_item};
 use crate::repository::user::get_user_by_id;
 
@@ -58,7 +58,7 @@ pub async fn create_item(
 pub async fn get_items(
   pool: web::Data<DbPool>,
   req: HttpRequest,
-  bucket: web::Data<Bucket>,
+  _bucket: web::Data<Bucket>,
 ) -> Result<HttpResponse, Error> {
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
@@ -111,7 +111,7 @@ pub async fn get_items(
 pub async fn get_item(
   pool: web::Data<DbPool>,
   item_id: Path<i64>,
-  req: HttpRequest,
+  _req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
   let item_response = web::block(move || -> Result<ItemResponse, RouteError> {
     if let Ok(mut conn) = pool.get() {

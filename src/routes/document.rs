@@ -1,21 +1,20 @@
-use actix_web::{get, post, put, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 use diesel::{
   prelude::*,
-  r2d2::{self, ConnectionManager},
 };
 use s3::bucket::Bucket;
 
 use super::models::{
-  CreateItemImagesRequest, CreateItemImagesResponse, GetItemsResponse, ItemImage,
-  ItemImagesUpdateStatusToUploadedRequest, ItemResponse,
+  CreateItemImagesRequest, CreateItemImagesResponse, ItemImage,
+  ItemImagesUpdateStatusToUploadedRequest,
 };
 use super::DbPool;
 use super::RouteError;
 use crate::helpers::get_timestamp_as_nano;
 use crate::repository::document::{
-  get_docs_for_item, insert_new_document, set_to_uploaded_to_cloud,
+  insert_new_document, set_to_uploaded_to_cloud,
 };
-use crate::repository::item::{get_all, get_item_by_id};
+use crate::repository::item::{get_item_by_id};
 use crate::repository::user::get_user_by_id;
 
 const IMAGE_UPLOAD_EXPIRATION_SECONDS: u32 = 4000;
@@ -79,7 +78,7 @@ pub async fn create_upload_presigned_url(
               id: item_document.id,
             });
           }
-          Err(e) => {
+          Err(_e) => {
             // just ask from user to reupload again
             return Err(RouteError::InternalErr);
           }

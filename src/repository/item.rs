@@ -3,12 +3,12 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use serde::{Deserialize, Serialize};
 
-use crate::helpers::new_naive_date;
+
 use crate::schema::item as item_table;
 use crate::schema::item::dsl::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "item_table"]
+#[diesel(table_name = item_table)]
 pub struct InsertItem {
   pub description: String,
   pub details: String,

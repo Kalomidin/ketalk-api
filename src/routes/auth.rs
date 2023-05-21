@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 use diesel::{
   prelude::*,
   r2d2::{self, ConnectionManager},

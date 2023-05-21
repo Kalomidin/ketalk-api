@@ -1,11 +1,11 @@
 use actix::ActorFutureExt;
 use actix::{fut, ActorContext};
-use actix::{Actor, ActorFuture, Addr, ContextFutureSpawner, Running, StreamHandler, WrapFuture};
-use actix::{AsyncContext, Handler, Message, ResponseFuture};
+use actix::{Actor, Addr, ContextFutureSpawner, Running, StreamHandler, WrapFuture};
+use actix::{AsyncContext, Handler};
 use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
+
 
 use super::lobby::Lobby;
 use super::messages::{

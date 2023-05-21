@@ -6,7 +6,7 @@ use crate::schema::users as user_table;
 use crate::schema::users::dsl::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "user_table"]
+#[diesel(table_name = user_table)]
 pub struct InsertUser {
   pub user_name: String,
   pub phone_number: String,

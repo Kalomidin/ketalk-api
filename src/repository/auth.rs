@@ -7,7 +7,7 @@ use crate::schema::refresh_token::dsl::*;
 use diesel::result::Error as DieselError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "refresh_token_table"]
+#[diesel(table_name = refresh_token_table)]
 pub struct InsertRefreshToken {
   pub user_id: i64,
   pub token: String,

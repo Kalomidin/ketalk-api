@@ -1,6 +1,6 @@
 use diesel::{
   prelude::*,
-  r2d2::{self, ConnectionManager},
+  r2d2::{ConnectionManager},
 };
 
 use crate::helpers::get_env;

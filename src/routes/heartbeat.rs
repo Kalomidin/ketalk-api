@@ -1,5 +1,5 @@
 use actix_web::{
-  get, http::header, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
+  get, Error, HttpResponse,
 };
 
 #[get("/heartbeat")]

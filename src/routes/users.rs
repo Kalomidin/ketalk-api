@@ -7,7 +7,7 @@ use super::DbPool;
 use super::RouteError;
 use crate::auth::{create_jwt, get_new_refresh_token};
 use crate::repository::auth::insert_new_refresh_token;
-use crate::repository::document::{get_docs_for_item, insert_new_document};
+use crate::repository::document::{get_docs_for_item};
 use crate::repository::user::{
   get_user_by__username_and_phone_number, get_user_by_id, insert_new_user,
 };

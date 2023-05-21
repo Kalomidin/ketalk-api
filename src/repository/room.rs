@@ -6,7 +6,7 @@ use crate::schema::room as room_table;
 use crate::schema::room::dsl::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "room_table"]
+#[diesel(table_name = room_table)]
 pub struct InsertRoom {
   created_by: i64,
   item_id: i64,

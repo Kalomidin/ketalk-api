@@ -8,7 +8,7 @@ use crate::schema::room_member as room_member_table;
 use crate::schema::room_member::dsl::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "room_member_table"]
+#[diesel(table_name = room_member_table)]
 pub struct InsertRoomMember {
   pub room_id: i64,
   pub member_id: i64,

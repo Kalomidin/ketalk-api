@@ -7,7 +7,7 @@ use crate::schema::message::dsl::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
-#[table_name = "message_table"]
+#[diesel(table_name = message_table)]
 pub struct InsertMessage {
   pub room_id: i64,
   pub sender_id: i64,

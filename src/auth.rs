@@ -1,5 +1,5 @@
 use actix_web::HttpMessage;
-use actix_web::{dev::ServiceRequest, web, App, Error, HttpServer};
+use actix_web::{dev::ServiceRequest, Error};
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web_httpauth::extractors::AuthenticationError;
 use chrono::Utc;
