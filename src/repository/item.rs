@@ -88,3 +88,17 @@ pub fn get_all(conn: &mut PgConnection) -> Result<Vec<Item>, DieselError> {
     None => Err(DieselError::NotFound),
   }
 }
+
+pub fn increment_message_count(
+  conn: &mut PgConnection,
+  item_id: i64,
+) -> Result<(), DieselError> {
+  let result = diesel::update(item)
+    .filter(deleted_at.is_null().and(id.eq(item_id)))
+    .set(message_count.eq(message_count + 1))
+    .execute(conn);
+  if result.is_err() || result.unwrap() == 0 {
+    return Err(DieselError::NotFound);
+  }
+  Ok(())
+}

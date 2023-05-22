@@ -8,7 +8,7 @@ use super::models::{CreateRoomRequest, CreateRoomResponse, GetUserRoomsResponse,
 use super::DbPool;
 use super::RouteError;
 use crate::repository::document::get_cover_pic_for_item;
-use crate::repository::item::get_item_by_id;
+use crate::repository::item::{get_item_by_id, increment_message_count};
 use crate::repository::message::get_last_message_by_room_id;
 use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
 use crate::repository::room_member::{
@@ -140,6 +140,10 @@ pub async fn create_room(
         }
         Err(DieselError::NotFound) => {
           let room = create_new_room(&mut conn, &user_id, &item_id)?;
+
+          // increment message count
+          increment_message_count(&mut conn, item_id)?;
+
           create_new_room_member(&mut conn, &room.id, &user_id)?;
           create_new_room_member(&mut conn, &room.id, &secondary_user_id)?;
           return Ok(room);
