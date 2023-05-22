@@ -1,7 +1,5 @@
 use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
-use diesel::{
-  prelude::*,
-};
+use diesel::prelude::*;
 use s3::bucket::Bucket;
 
 use super::models::{
@@ -11,10 +9,8 @@ use super::models::{
 use super::DbPool;
 use super::RouteError;
 use crate::helpers::get_timestamp_as_nano;
-use crate::repository::document::{
-  insert_new_document, set_to_uploaded_to_cloud,
-};
-use crate::repository::item::{get_item_by_id};
+use crate::repository::document::{insert_new_document, set_to_uploaded_to_cloud};
+use crate::repository::item::get_item_by_id;
 use crate::repository::user::get_user_by_id;
 
 const IMAGE_UPLOAD_EXPIRATION_SECONDS: u32 = 4000;

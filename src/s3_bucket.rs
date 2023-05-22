@@ -2,7 +2,6 @@ use crate::helpers;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 
-
 pub fn get_s3_bucket() -> Bucket {
   let s3_bucket_name = helpers::get_env("S3_BUCKET_NAME");
   let s3_bucket_region: s3::Region = helpers::get_env("S3_BUCKET_REGION").parse().unwrap();

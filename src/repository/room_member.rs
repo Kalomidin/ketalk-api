@@ -7,14 +7,14 @@ use crate::schema::room::dsl as room_dsl;
 use crate::schema::room_member as room_member_table;
 use crate::schema::room_member::dsl::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = room_member_table)]
 pub struct InsertRoomMember {
   pub room_id: i64,
   pub member_id: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct RoomMember {
   pub id: i64,
   pub room_id: i64,
@@ -24,7 +24,7 @@ pub struct RoomMember {
   pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct RoomNameWithMember {
   pub room_id: i64,
   pub item_id: Option<i64>,

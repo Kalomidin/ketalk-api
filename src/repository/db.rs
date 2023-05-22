@@ -1,7 +1,4 @@
-use diesel::{
-  prelude::*,
-  r2d2::{ConnectionManager},
-};
+use diesel::{prelude::*, r2d2::ConnectionManager};
 
 use crate::helpers::get_env;
 

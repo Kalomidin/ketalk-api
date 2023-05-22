@@ -3,11 +3,12 @@ use s3::bucket::Bucket;
 
 use super::models::{
   CreateItemRequest, CreateItemResponse, GetItemResponse, GetItemsResponse, ItemResponse,
+  ItemStatus,
 };
 use super::DbPool;
 use super::RouteError;
 
-use crate::repository::document::{get_docs_for_item};
+use crate::repository::document::get_docs_for_item;
 use crate::repository::item::{get_all, get_item_by_id, insert_new_item};
 use crate::repository::user::get_user_by_id;
 
@@ -25,7 +26,6 @@ pub async fn create_item(
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
 
-  // save the user into the db
   let description = form.description.to_owned();
   let details = form.details.to_owned();
   let price = form.price.to_owned();
@@ -75,6 +75,11 @@ pub async fn get_items(
         let docs = get_docs_for_item(&mut conn, item.id)?;
         for doc in docs {
           if doc.is_cover && doc.uploaded_to_cloud {
+            let item_status = match item.item_status.as_str() {
+              "Active" => ItemStatus::Active,
+              "Sold" => ItemStatus::Sold,
+              _ => ItemStatus::Reserved,
+            };
             resp.items.push(GetItemResponse {
               id: item.id,
               price: item.price,
@@ -83,6 +88,7 @@ pub async fn get_items(
               favorite_count: item.favorite_count,
               message_count: item.message_count,
               seen_count: item.seen_count,
+              item_status,
               owner_id: item.owner_id,
               created_at: item.created_at.to_string(),
               // TODO: create presigned url for cloudfront
@@ -118,7 +124,11 @@ pub async fn get_item(
       // verify user exists the user
       let item = get_item_by_id(&mut conn, item_id.into_inner())?;
       let item_owner = get_user_by_id(&mut conn, item.owner_id)?;
-
+      let item_status = match item.item_status.as_str() {
+        "Active" => ItemStatus::Active,
+        "Sold" => ItemStatus::Sold,
+        _ => ItemStatus::Reserved,
+      };
       let mut resp = ItemResponse {
         id: item.id,
         price: item.price,
@@ -127,6 +137,7 @@ pub async fn get_item(
         owner_id: item.owner_id,
         owner_name: item_owner.user_name,
         owner_location: None,
+        item_status,
         owner_image_url: "".to_string(),
         favorite_count: item.favorite_count,
         negotiable: item.negotiable,

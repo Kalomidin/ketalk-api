@@ -8,6 +8,7 @@ diesel::table! {
         price -> Int8,
         negotiable -> Bool,
         owner_id -> Int8,
+        item_status -> Varchar,
         favorite_count -> Int4,
         message_count -> Int4,
         seen_count -> Int4,
@@ -97,11 +98,11 @@ diesel::joinable!(room_member -> room (room_id));
 diesel::joinable!(room_member -> users (member_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    item,
-    item_document,
-    message,
-    refresh_token,
-    room,
-    room_member,
-    users,
+  item,
+  item_document,
+  message,
+  refresh_token,
+  room,
+  room_member,
+  users,
 );

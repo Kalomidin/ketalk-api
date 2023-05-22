@@ -2,16 +2,14 @@ use actix::prelude::{Actor, Context, Handler, Recipient};
 use std::collections::{HashMap, HashSet};
 
 use super::messages::{
-  ClientActorMessage, ClientWsMessageType, Connect, Disconnect,
-  ServerActorMessage, ServerActorMessages, WsMessage,
+  ClientActorMessage, ClientWsMessageType, Connect, Disconnect, ServerActorMessage,
+  ServerActorMessages, WsMessage,
 };
 use crate::helpers::new_naive_date;
 
-use crate::repository::message::{
-  create_new_message_with_date, get_messages_for_room_id,
-};
+use crate::repository::message::{create_new_message_with_date, get_messages_for_room_id};
 
-use crate::repository::room_member::{set_last_joined_at};
+use crate::repository::room_member::set_last_joined_at;
 use crate::routes::DbPool;
 
 pub type Socket = Recipient<WsMessage>;

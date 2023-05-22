@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 use crate::schema::users as user_table;
 use crate::schema::users::dsl::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = user_table)]
 pub struct InsertUser {
   pub user_name: String,
   pub phone_number: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct User {
   pub id: i64,
   pub user_name: String,

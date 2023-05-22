@@ -3,11 +3,10 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use serde::{Deserialize, Serialize};
 
-
 use crate::schema::item as item_table;
 use crate::schema::item::dsl::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = item_table)]
 pub struct InsertItem {
   pub description: String,
@@ -17,7 +16,7 @@ pub struct InsertItem {
   pub owner_id: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct Item {
   pub id: i64,
   pub description: String,
@@ -25,6 +24,7 @@ pub struct Item {
   pub price: i64,
   pub negotiable: bool,
   pub owner_id: i64,
+  pub item_status: String,
   pub favorite_count: i32,
   pub message_count: i32,
   pub seen_count: i32,
@@ -89,10 +89,7 @@ pub fn get_all(conn: &mut PgConnection) -> Result<Vec<Item>, DieselError> {
   }
 }
 
-pub fn increment_message_count(
-  conn: &mut PgConnection,
-  item_id: i64,
-) -> Result<(), DieselError> {
+pub fn increment_message_count(conn: &mut PgConnection, item_id: i64) -> Result<(), DieselError> {
   let result = diesel::update(item)
     .filter(deleted_at.is_null().and(id.eq(item_id)))
     .set(message_count.eq(message_count + 1))

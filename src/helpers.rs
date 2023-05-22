@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use std::time::{SystemTime};
+use std::time::SystemTime;
 
 pub fn get_env(key: &str) -> String {
   match std::env::var(key) {

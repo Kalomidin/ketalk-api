@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 use crate::schema::room as room_table;
 use crate::schema::room::dsl::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = room_table)]
 pub struct InsertRoom {
   created_by: i64,
   item_id: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct Room {
   pub id: i64,
   pub item_id: Option<i64>,

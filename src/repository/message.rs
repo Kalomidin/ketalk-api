@@ -6,7 +6,7 @@ use crate::schema::message as message_table;
 use crate::schema::message::dsl::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = message_table)]
 pub struct InsertMessage {
   pub room_id: i64,
@@ -17,7 +17,7 @@ pub struct InsertMessage {
   pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct Message {
   pub id: i64,
   pub room_id: i64,

@@ -19,7 +19,6 @@ use rust_chat_app::ws::lobby::Lobby;
 
 use local_ip_address::local_ip;
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
   dotenv().ok();
@@ -28,12 +27,11 @@ async fn main() -> std::io::Result<()> {
 
   let bucket = get_s3_bucket();
 
-
   let my_local_ip = local_ip();
   if let Ok(my_local_ip) = my_local_ip {
     println!("This is my local IP address: {:?}", my_local_ip);
   } else {
-      println!("Error getting local IP: {:?}", my_local_ip);
+    println!("Error getting local IP: {:?}", my_local_ip);
   }
 
   // connect to postgres db

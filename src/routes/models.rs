@@ -157,6 +157,7 @@ pub struct GetItemResponse {
   pub favorite_count: i32,
   pub message_count: i32,
   pub seen_count: i32,
+  pub item_status: ItemStatus,
   pub created_at: String,
   pub cover_image_url: String,
 }
@@ -172,6 +173,7 @@ pub struct ItemResponse {
   pub owner_name: String,
   pub owner_location: Option<Location>,
   pub owner_image_url: String,
+  pub item_status: ItemStatus,
   pub negotiable: bool,
   pub favorite_count: i32,
   pub message_count: i32,
@@ -212,5 +214,5 @@ pub struct UserItem {
 pub enum ItemStatus {
   Active,
   Sold,
-  Deleted,
+  Reserved,
 }

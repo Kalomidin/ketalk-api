@@ -7,7 +7,7 @@ use super::DbPool;
 use super::RouteError;
 use crate::auth::{create_jwt, get_new_refresh_token};
 use crate::repository::auth::insert_new_refresh_token;
-use crate::repository::document::{get_docs_for_item};
+use crate::repository::document::get_docs_for_item;
 use crate::repository::user::{
   get_user_by__username_and_phone_number, get_user_by_id, insert_new_user,
 };
@@ -137,6 +137,11 @@ pub async fn get_user_items(
         let docs = get_docs_for_item(&mut conn, item.id)?;
         for doc in docs {
           if doc.is_cover && doc.uploaded_to_cloud {
+            let item_status = match item.item_status.as_str() {
+              "Active" => ItemStatus::Active,
+              "Sold" => ItemStatus::Sold,
+              _ => ItemStatus::Reserved,
+            };
             resp.push(UserItem {
               id: item.id,
               item_name: item.description,
@@ -147,7 +152,7 @@ pub async fn get_user_items(
               price: item.price,
               favorite_count: item.favorite_count,
               message_count: item.message_count,
-              item_status: ItemStatus::Active,
+              item_status: item_status,
               created_at: item.created_at,
               updated_at: item.updated_at,
             });

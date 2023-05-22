@@ -2,12 +2,11 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
-
 use crate::schema::item_document as document_table;
 use crate::schema::item_document::dsl::*;
 use diesel::result::Error as DieselError;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = document_table)]
 pub struct InsertDocument {
   pub key: String,
@@ -17,7 +16,7 @@ pub struct InsertDocument {
   pub is_cover: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct Document {
   pub id: i64,
   // object name

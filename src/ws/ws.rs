@@ -6,7 +6,6 @@ use actix_web_actors::ws;
 use actix_web_actors::ws::Message::Text;
 use std::time::{Duration, Instant};
 
-
 use super::lobby::Lobby;
 use super::messages::{
   ClientActorMessage, ClientWsMessage, ClientWsMessageType, Connect, Disconnect, WsMessage,
