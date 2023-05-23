@@ -66,6 +66,22 @@ pub fn get_items_by_user_id(
   }
 }
 
+pub fn update_item_status(
+  conn: &mut PgConnection,
+  item_id: i64,
+  user_id: i64,
+  new_item_status: String,
+) -> Result<(), DieselError> {
+  let result = diesel::update(item)
+    .filter(id.eq(item_id).and(owner_id.eq(user_id)))
+    .set(item_status.eq(new_item_status))
+    .execute(conn);
+  if result.is_err() || result.unwrap() == 0 {
+    return Err(DieselError::NotFound);
+  }
+  Ok(())
+}
+
 pub fn get_item_by_id(conn: &mut PgConnection, item_id: i64) -> Result<Item, DieselError> {
   let result = item
     .filter(id.eq(item_id).and(deleted_at.is_null()))

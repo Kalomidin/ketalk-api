@@ -11,7 +11,7 @@ use rust_chat_app::repository::db::connection_manager;
 use rust_chat_app::routes::auth::{logout, refresh_auth_token};
 use rust_chat_app::routes::document::{create_upload_presigned_url, update_status};
 use rust_chat_app::routes::heartbeat::heartbeat;
-use rust_chat_app::routes::item::{create_item, get_item, get_items};
+use rust_chat_app::routes::item::{create_item, get_item, get_items, new_item_status};
 use rust_chat_app::routes::room::{create_room, get_user_rooms, join_room};
 use rust_chat_app::routes::users::{get_user, get_user_items, signin, signup};
 use rust_chat_app::s3_bucket::get_s3_bucket;
@@ -78,7 +78,8 @@ async fn main() -> std::io::Result<()> {
           .service(update_status)
           .service(get_items)
           .service(get_item)
-          .service(get_user_items),
+          .service(get_user_items)
+          .service(new_item_status),
       )
   })
   .workers(2)

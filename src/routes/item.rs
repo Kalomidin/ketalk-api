@@ -1,15 +1,16 @@
+use actix_web::web::Json;
 use actix_web::{get, post, web, web::Path, Error, HttpMessage, HttpRequest, HttpResponse};
 use s3::bucket::Bucket;
 
 use super::models::{
   CreateItemRequest, CreateItemResponse, GetItemResponse, GetItemsResponse, ItemResponse,
-  ItemStatus,
+  ItemStatus, UpdateItemStatusRequest,
 };
 use super::DbPool;
 use super::RouteError;
 
 use crate::repository::document::get_docs_for_item;
-use crate::repository::item::{get_all, get_item_by_id, insert_new_item};
+use crate::repository::item::{get_all, get_item_by_id, insert_new_item, update_item_status};
 use crate::repository::user::get_user_by_id;
 
 const GET_IMAGE_EXPIRATION_SECONDS: u32 = 200;
@@ -166,4 +167,33 @@ pub async fn get_item(
   .map_err(actix_web::error::ErrorUnprocessableEntity)?;
 
   Ok(HttpResponse::Ok().json(item_response))
+}
+
+#[post("/item/{item_id}/status")]
+pub async fn new_item_status(
+  pool: web::Data<DbPool>,
+  item_id: Path<i64>,
+  req: HttpRequest,
+  form: Json<UpdateItemStatusRequest>,
+) -> Result<HttpResponse, Error> {
+  let _item_id = item_id.into_inner();
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let new_item_status = match form.new_item_status {
+    ItemStatus::Active => "Active",
+    ItemStatus::Reserved => "Reserved",
+    _ => "Sold",
+  };
+  web::block(move || -> Result<(), RouteError> {
+    if let Ok(mut conn) = pool.get() {
+      // verify user exists the user
+      update_item_status(&mut conn, _item_id, user_id, new_item_status.to_string())?;
+      return Ok(());
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+
+  Ok(HttpResponse::Ok().body("OK"))
 }

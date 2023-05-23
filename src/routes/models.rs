@@ -216,3 +216,9 @@ pub enum ItemStatus {
   Sold,
   Reserved,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct UpdateItemStatusRequest {
+  pub new_item_status: ItemStatus,
+}
