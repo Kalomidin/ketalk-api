@@ -15,8 +15,9 @@ fn get_db_url() -> String {
   let postgres_pwd = get_env("POSTGRES_PASSWORD");
   let postgres_db_port = get_env("POSTGRES_DB_PORT");
   let postgres_db = get_env("POSTGRES_DB");
+  let postgres_db_host = get_env("POSTGRES_DB_HOST");
   format!(
-    "postgresql://{}:{}@localhost:{}/{}",
-    postgres_user, postgres_pwd, postgres_db_port, postgres_db
+    "postgresql://{}:{}@{}:{}/{}",
+    postgres_user, postgres_pwd, postgres_db_host, postgres_db_port, postgres_db
   )
 }

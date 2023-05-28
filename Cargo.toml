@@ -1,9 +1,12 @@
 [package]
-name = "rust-chat-app"
+name = "ketalk"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+edition = "2021"
+name = "ketalk"
+path = "src/bin/ketalk.rs"
 
 [dependencies]
 actix = "0.13.0"

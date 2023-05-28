@@ -3,14 +3,16 @@ use actix_web::{get, post, web, web::Path, Error, HttpMessage, HttpRequest, Http
 use s3::bucket::Bucket;
 
 use super::models::{
-  CreateItemRequest, CreateItemResponse, GetItemResponse, GetItemsResponse, ItemResponse,
-  ItemStatus, UpdateItemStatusRequest,
+  CreateItemRequest, CreateItemResponse, GetItemResponse, GetItemsResponse, HideUnhideItemRequest,
+  ItemResponse, ItemStatus, UpdateItemStatusRequest,
 };
 use super::DbPool;
 use super::RouteError;
 
 use crate::repository::document::get_docs_for_item;
-use crate::repository::item::{get_all, get_item_by_id, insert_new_item, update_item_status};
+use crate::repository::item::{
+  get_all_visible, get_item_by_id, hide_unhide_item, insert_new_item, update_item_status,
+};
 use crate::repository::user::get_user_by_id;
 
 const GET_IMAGE_EXPIRATION_SECONDS: u32 = 200;
@@ -68,7 +70,7 @@ pub async fn get_items(
     if let Ok(mut conn) = pool.get() {
       // verify user exists the user
       let mut resp = GetItemsResponse { items: vec![] };
-      let items = get_all(&mut conn)?;
+      let items = get_all_visible(&mut conn)?;
       for item in items {
         if item.owner_id == user_id {
           continue;
@@ -139,6 +141,7 @@ pub async fn get_item(
         owner_name: item_owner.user_name,
         owner_location: None,
         item_status,
+        is_hidden: item.is_hidden,
         owner_image_url: "".to_string(),
         favorite_count: item.favorite_count,
         negotiable: item.negotiable,
@@ -188,6 +191,27 @@ pub async fn new_item_status(
     if let Ok(mut conn) = pool.get() {
       // verify user exists the user
       update_item_status(&mut conn, _item_id, user_id, new_item_status.to_string())?;
+      return Ok(());
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+
+  Ok(HttpResponse::Ok().body("OK"))
+}
+
+#[post("/item/{item_id}/hide")]
+pub async fn hide_or_unhide_item(
+  pool: web::Data<DbPool>,
+  item_id: Path<i64>,
+  form: Json<HideUnhideItemRequest>,
+) -> Result<HttpResponse, Error> {
+  let _item_id = item_id.into_inner();
+  web::block(move || -> Result<(), RouteError> {
+    if let Ok(mut conn) = pool.get() {
+      // verify user exists the user
+      hide_unhide_item(&mut conn, _item_id, form.is_hidden)?;
       return Ok(());
     }
     return Err(RouteError::PoolingErr);

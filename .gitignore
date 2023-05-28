@@ -6,3 +6,6 @@ target/*
 .DS_Store
 *.pem
 .env
+.env.prod
+app.yaml
+service.yaml

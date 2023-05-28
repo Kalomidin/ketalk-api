@@ -174,6 +174,7 @@ pub struct ItemResponse {
   pub owner_location: Option<Location>,
   pub owner_image_url: String,
   pub item_status: ItemStatus,
+  pub is_hidden: bool,
   pub negotiable: bool,
   pub favorite_count: i32,
   pub message_count: i32,
@@ -206,6 +207,7 @@ pub struct UserItem {
   pub favorite_count: i32,
   pub message_count: i32,
   pub item_status: ItemStatus,
+  pub is_hidden: bool,
   pub created_at: chrono::NaiveDateTime,
   pub updated_at: chrono::NaiveDateTime,
 }
@@ -221,4 +223,10 @@ pub enum ItemStatus {
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct UpdateItemStatusRequest {
   pub new_item_status: ItemStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct HideUnhideItemRequest {
+  pub is_hidden: bool,
 }

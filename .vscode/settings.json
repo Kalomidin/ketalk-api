@@ -1,4 +1,7 @@
 {
     "editor.wordBasedSuggestions": false,
     "editor.quickSuggestionsDelay": 200,
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml"
+    ],
 }

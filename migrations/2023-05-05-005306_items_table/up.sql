@@ -7,6 +7,7 @@ CREATE TABLE item (
   negotiable boolean NOT NULL DEFAULT false,  
   owner_id bigint NOT NULL  REFERENCES users(id),
   item_status VARCHAR NOT NULL DEFAULT 'Active',
+  is_hideen boolean NOT NULL DEFAULT false,
   favorite_count int NOT NULL DEFAULT 0,
   message_count int NOT NULL DEFAULT 0,
   seen_count int NOT NULL DEFAULT 0,

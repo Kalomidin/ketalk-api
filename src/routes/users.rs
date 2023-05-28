@@ -153,6 +153,7 @@ pub async fn get_user_items(
               favorite_count: item.favorite_count,
               message_count: item.message_count,
               item_status: item_status,
+              is_hidden: item.is_hidden,
               created_at: item.created_at,
               updated_at: item.updated_at,
             });

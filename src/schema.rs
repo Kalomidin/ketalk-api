@@ -9,6 +9,7 @@ diesel::table! {
         negotiable -> Bool,
         owner_id -> Int8,
         item_status -> Varchar,
+        is_hideen -> Bool,
         favorite_count -> Int4,
         message_count -> Int4,
         seen_count -> Int4,

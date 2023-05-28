@@ -1182,6 +1182,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ketalk"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-cors",
+ "actix-files",
+ "actix-web",
+ "actix-web-actors",
+ "actix-web-httpauth",
+ "chrono",
+ "derive_more",
+ "diesel",
+ "dotenv",
+ "jsonwebtoken",
+ "local-ip-address",
+ "postgres",
+ "rand",
+ "rust-s3",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "language-tags"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1813,30 +1837,6 @@ dependencies = [
  "untrusted",
  "web-sys",
  "winapi",
-]
-
-[[package]]
-name = "rust-chat-app"
-version = "0.1.0"
-dependencies = [
- "actix",
- "actix-cors",
- "actix-files",
- "actix-web",
- "actix-web-actors",
- "actix-web-httpauth",
- "chrono",
- "derive_more",
- "diesel",
- "dotenv",
- "jsonwebtoken",
- "local-ip-address",
- "postgres",
- "rand",
- "rust-s3",
- "serde",
- "serde_json",
- "uuid",
 ]
 
 [[package]]

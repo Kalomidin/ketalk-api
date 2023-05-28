@@ -25,6 +25,7 @@ pub struct Item {
   pub negotiable: bool,
   pub owner_id: i64,
   pub item_status: String,
+  pub is_hidden: bool,
   pub favorite_count: i32,
   pub message_count: i32,
   pub seen_count: i32,
@@ -93,9 +94,9 @@ pub fn get_item_by_id(conn: &mut PgConnection, item_id: i64) -> Result<Item, Die
   }
 }
 
-pub fn get_all(conn: &mut PgConnection) -> Result<Vec<Item>, DieselError> {
+pub fn get_all_visible(conn: &mut PgConnection) -> Result<Vec<Item>, DieselError> {
   let result = item
-    .filter(deleted_at.is_null())
+    .filter(deleted_at.is_null().and(is_hideen.eq(false)))
     .order(created_at.desc())
     .load(conn)
     .optional()?;
@@ -109,6 +110,21 @@ pub fn increment_message_count(conn: &mut PgConnection, item_id: i64) -> Result<
   let result = diesel::update(item)
     .filter(deleted_at.is_null().and(id.eq(item_id)))
     .set(message_count.eq(message_count + 1))
+    .execute(conn);
+  if result.is_err() || result.unwrap() == 0 {
+    return Err(DieselError::NotFound);
+  }
+  Ok(())
+}
+
+pub fn hide_unhide_item(
+  conn: &mut PgConnection,
+  item_id: i64,
+  _is_hidden: bool,
+) -> Result<(), DieselError> {
+  let result = diesel::update(item)
+    .filter(deleted_at.is_null().and(id.eq(item_id)))
+    .set(is_hideen.eq(_is_hidden))
     .execute(conn);
   if result.is_err() || result.unwrap() == 0 {
     return Err(DieselError::NotFound);

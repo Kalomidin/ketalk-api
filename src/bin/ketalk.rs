@@ -5,17 +5,19 @@ use diesel::r2d2;
 use dotenv::dotenv;
 
 use actix_web_httpauth::middleware::HttpAuthentication;
-use rust_chat_app::auth::validator;
-use rust_chat_app::helpers::get_env;
-use rust_chat_app::repository::db::connection_manager;
-use rust_chat_app::routes::auth::{logout, refresh_auth_token};
-use rust_chat_app::routes::document::{create_upload_presigned_url, update_status};
-use rust_chat_app::routes::heartbeat::heartbeat;
-use rust_chat_app::routes::item::{create_item, get_item, get_items, new_item_status};
-use rust_chat_app::routes::room::{create_room, get_user_rooms, join_room};
-use rust_chat_app::routes::users::{get_user, get_user_items, signin, signup};
-use rust_chat_app::s3_bucket::get_s3_bucket;
-use rust_chat_app::ws::lobby::Lobby;
+use ketalk::auth::validator;
+use ketalk::helpers::get_env;
+use ketalk::repository::db::connection_manager;
+use ketalk::routes::auth::{logout, refresh_auth_token};
+use ketalk::routes::document::{create_upload_presigned_url, update_status};
+use ketalk::routes::heartbeat::heartbeat;
+use ketalk::routes::item::{
+  create_item, get_item, get_items, hide_or_unhide_item, new_item_status,
+};
+use ketalk::routes::room::{create_room, get_user_rooms, join_room};
+use ketalk::routes::users::{get_user, get_user_items, signin, signup};
+use ketalk::s3_bucket::get_s3_bucket;
+use ketalk::ws::lobby::Lobby;
 
 use local_ip_address::local_ip;
 
@@ -79,7 +81,8 @@ async fn main() -> std::io::Result<()> {
           .service(get_items)
           .service(get_item)
           .service(get_user_items)
-          .service(new_item_status),
+          .service(new_item_status)
+          .service(hide_or_unhide_item),
       )
   })
   .workers(2)
