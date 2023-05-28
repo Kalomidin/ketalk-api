@@ -1,4 +1,6 @@
 use diesel::{prelude::*, r2d2::ConnectionManager};
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 use crate::helpers::get_env;
 
@@ -6,6 +8,11 @@ pub type DbError = Box<dyn std::error::Error + Send + Sync>;
 
 pub fn connection_manager() -> ConnectionManager<PgConnection> {
   let db_url = get_db_url();
+
+  // Run the migrations
+  let mut conn = PgConnection::establish(&db_url).unwrap();
+  conn.run_pending_migrations(MIGRATIONS).unwrap();
+
   let client = ConnectionManager::<PgConnection>::new(&db_url);
   client
 }
