@@ -2,3 +2,30 @@
 # - build docker image
 # - upload docker image into google cloud
 # - update the tag in ketalk-k8s-config
+
+version: 2.1
+orbs:
+  go: circleci/go@1.7
+  gcp-gcr: circleci/gcp-gcr@0.13
+  jq: circleci/jq@2
+
+jobs:
+  publish:
+    docker:
+      - image: cimg/python:2.7.17
+    steps:
+      - jq/install
+      - setup_remote_docker
+      - gcp-gcr/gcr-auth
+      # create new docker image
+      - checkout
+      - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
+      - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
+      - run: docker build -t asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
+      - run: docker push asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
+      - run: gcloud container images add-tag --quiet asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+
+workflows:
+  continuous-integration:
+    jobs:
+      - publish
