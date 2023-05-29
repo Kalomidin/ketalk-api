@@ -32,3 +32,6 @@ workflows:
       - publish:
           context:
             - gcloud
+          filters:
+            branches:
+              only: release
