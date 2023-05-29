@@ -19,6 +19,7 @@ jobs:
       - gcp-gcr/gcr-auth
       # create new docker image
       - checkout
+      - run: gcloud config set project ${GOOGLE_PROJECT_ID}
       - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
       - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
       - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
