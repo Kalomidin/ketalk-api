@@ -19,12 +19,18 @@ jobs:
       - gcp-gcr/gcr-auth
       # create new docker image
       - checkout
-      - run: gcloud config set project ${GOOGLE_PROJECT_ID}
-      - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
-      - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
-      - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
-      - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
-      - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+      # - run: gcloud config set project ${GOOGLE_PROJECT_ID}
+      # - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
+      # - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
+      # - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
+      # - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
+      # - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+      - run:
+          name: ssh keychain
+          command: ssh-keyscan github.com
+      - run:
+          name: check ssh
+          command: ls ~/.ssh
       - run:
           name: pre-auth github.com
           command: |
