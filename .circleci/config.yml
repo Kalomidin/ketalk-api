@@ -1,0 +1,4 @@
+# purpose of integrating with circleci whenever pushed to release branch, it triggers:
+# - build docker image
+# - upload docker image into google cloud
+# - update the tag in ketalk-k8s-config
