@@ -21,9 +21,9 @@ jobs:
       - checkout
       - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
       - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
-      - run: docker build -t asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
-      - run: docker push asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
-      - run: gcloud container images add-tag --quiet asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} asia.gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+      - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
+      - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
+      - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
 
 workflows:
   continuous-integration:
