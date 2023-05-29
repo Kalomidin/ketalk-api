@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ketalk
+  namespace: my-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ketalk
+  template:
+    metadata:
+      labels:
+        app: ketalk
+    spec:
+      containers:
+        - name: my-container
+          image: gcr.io/perfect-age-387605/ketalk:latest
+          resources:
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+              ephemeral-storage: "8Gi"  # Adjust the storage limit here
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "4Gi"  # Adjust the storage request here
+          ports:
+            - containerPort: 8080
