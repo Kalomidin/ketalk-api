@@ -19,12 +19,12 @@ jobs:
       - gcp-gcr/gcr-auth
       # create new docker image
       - checkout
-      # - run: gcloud config set project ${GOOGLE_PROJECT_ID}
-      # - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
-      # - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
-      # - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
-      # - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
-      # - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+      - run: gcloud config set project ${GOOGLE_PROJECT_ID}
+      - run: echo 'export SERVICE_VERSION=$(echo $CIRCLE_SHA1 | cut -c -7)' >> $BASH_ENV
+      - run: echo 'export SERVICE_NAME=$CIRCLE_PROJECT_REPONAME' >> $BASH_ENV
+      - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
+      - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
+      - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
       - run:
           name: ssh keychain
           command: ssh-keyscan github.com
@@ -41,10 +41,12 @@ jobs:
       - run:
           name: clone ketalk-k8s-config
           command: git clone -b master git@github.com:Kalomidin/ketalk-k8s-config.git appcfg
-      
+      - run:
+          name: give write permissions
+          command: sudo chmod +x appcfg/.circleci/promote.sh appcfg/.circleci/update-version.sh
       - run:
           name: update version in ketalk-k8s-config
-          command: BRANCH_NAME=master sudo appcfg/.circleci/promote.sh
+          command: BRANCH_NAME=master appcfg/.circleci/promote.sh
 
 workflows:
   continuous-integration:
