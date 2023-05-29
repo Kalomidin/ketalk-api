@@ -25,6 +25,20 @@ jobs:
       - run: docker build -t gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} .
       - run: docker push gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION}
       - run: gcloud container images add-tag --quiet gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:${SERVICE_VERSION} gcr.io/${GOOGLE_PROJECT_ID}/${SERVICE_NAME}:latest
+      - run:
+          name: pre-auth github.com
+          command: |
+            mkdir -p ~/.ssh && \
+            touch ~/.ssh/known_hosts && \
+            chmod 600 ~/.ssh/known_hosts && \
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - run:
+          name: clone ketalk-k8s-config
+          command: git clone -b master git@github.com:Kalomidin/ketalk-k8s-config.git appcfg
+      
+      - run:
+          name: update version in ketalk-k8s-config
+          command: BRANCH_NAME=master appcfg/.circleci/promote.sh
 
 workflows:
   continuous-integration:
@@ -32,6 +46,7 @@ workflows:
       - publish:
           context:
             - gcloud
+            - github
           filters:
             branches:
               only: release
