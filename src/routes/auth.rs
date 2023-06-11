@@ -6,7 +6,7 @@ use diesel::{
 
 use super::models::{LogoutRequest, RefreshAuthTokenRequest, RefreshAuthTokenResponse};
 use super::DbPool;
-use super::RouteError;
+use super::{route_error_handler, RouteError};
 use crate::auth::{create_jwt, get_new_refresh_token};
 use crate::repository::auth::{delete_refresh_token, insert_new_refresh_token};
 
@@ -27,7 +27,7 @@ pub async fn refresh_auth_token(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
   // create new refresh access token
   let pool_cloned = pool.clone();
@@ -40,7 +40,7 @@ pub async fn refresh_auth_token(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
   // create new jwt token and return
   let auth_token = create_jwt(new_refresh_token.user_id)?;
@@ -67,6 +67,6 @@ pub async fn logout(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
   Ok(HttpResponse::Ok().body("OK"))
 }

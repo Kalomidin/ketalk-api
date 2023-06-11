@@ -1,8 +1,8 @@
 -- Your SQL goes here
 CREATE TABLE item (
   id bigserial NOT NULL PRIMARY KEY,
+  title VARCHAR NOT NULL,
   description VARCHAR NOT NULL,
-  details VARCHAR NOT NULL,
   price bigint NOT NULL,
   negotiable boolean NOT NULL DEFAULT false,  
   owner_id bigint NOT NULL  REFERENCES users(id),

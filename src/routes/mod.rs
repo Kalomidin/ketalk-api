@@ -6,9 +6,10 @@ use diesel::{
 use std::fmt;
 
 pub mod auth;
-pub mod document;
+pub mod category;
 pub mod heartbeat;
 pub mod item;
+pub mod item_image;
 pub mod models;
 pub mod room;
 pub mod users;
@@ -22,6 +23,9 @@ pub enum RouteError {
   Unauthorized,
   InternalErr,
   PoolingErr,
+  NoCoverImage,
+  InvalidPassword,
+  InvalidCategory,
 }
 
 unsafe impl Send for RouteError {}
@@ -36,7 +40,31 @@ impl fmt::Display for RouteError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match *self {
       RouteError::DbError(ref e) => e.fmt(f),
-      _ => write!(f, "Unknown Error"),
+      RouteError::CreateJwtErr => write!(f, "Error creating jwt"),
+      RouteError::Unauthorized => write!(f, "Unauthorized"),
+      RouteError::InternalErr => write!(f, "Internal Server Error"),
+      RouteError::PoolingErr => write!(f, "Error pooling connection"),
+      RouteError::NoCoverImage => write!(f, "No cover image"),
+      RouteError::InvalidPassword => write!(f, "Invalid password"),
+      RouteError::InvalidCategory => write!(f, "Invalid category"),
     }
+  }
+}
+
+fn route_error_handler(e: RouteError) -> actix_web::error::Error {
+  match e {
+    RouteError::Unauthorized => actix_web::error::ErrorUnauthorized("Unauthorized"),
+    RouteError::NoCoverImage => actix_web::error::ErrorBadRequest("No cover image found"),
+    RouteError::InternalErr => actix_web::error::ErrorInternalServerError("Internal Server Error"),
+    RouteError::CreateJwtErr => actix_web::error::ErrorInternalServerError("Error creating jwt"),
+    RouteError::PoolingErr => {
+      actix_web::error::ErrorInternalServerError("Error pooling connection")
+    }
+    RouteError::InvalidPassword => actix_web::error::ErrorBadRequest("Invalid password"),
+    RouteError::InvalidCategory => actix_web::error::ErrorBadRequest("Invalid category"),
+    RouteError::DbError(e) => match e {
+      DieselError::NotFound => actix_web::error::ErrorNotFound("Not found"),
+      e => actix_web::error::ErrorInternalServerError(format!("Internal Server Error: {}", e)),
+    },
   }
 }

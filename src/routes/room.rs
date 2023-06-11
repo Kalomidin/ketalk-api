@@ -6,9 +6,9 @@ use diesel::result::Error as DieselError;
 
 use super::models::{CreateRoomRequest, CreateRoomResponse, GetUserRoomsResponse, UserRoom};
 use super::DbPool;
-use super::RouteError;
-use crate::repository::document::get_cover_pic_for_item;
+use super::{route_error_handler, RouteError};
 use crate::repository::item::{get_item_by_id, increment_message_count};
+use crate::repository::item_image::get_cover_pic_for_item;
 use crate::repository::message::get_last_message_by_room_id;
 use crate::repository::room::{create_new_room, get_room_by_item_and_creator};
 use crate::repository::room_member::{
@@ -56,9 +56,9 @@ pub async fn join_room(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
-  let ws = WsConn::new(user.id, rid, user.user_name, srv.get_ref().clone());
+  let ws = WsConn::new(user.id, rid, user.name, srv.get_ref().clone());
   let resp = ws::start(ws, &req, stream)?;
   Ok(resp)
 }

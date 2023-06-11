@@ -9,11 +9,10 @@ use ketalk::auth::validator;
 use ketalk::helpers::get_env;
 use ketalk::repository::db::connection_manager;
 use ketalk::routes::auth::{logout, refresh_auth_token};
-use ketalk::routes::document::{create_upload_presigned_url, update_status};
+use ketalk::routes::category::{create_category, delete_category, get_categories, get_category};
 use ketalk::routes::heartbeat::heartbeat;
-use ketalk::routes::item::{
-  create_item, get_item, get_items, hide_or_unhide_item, new_item_status,
-};
+use ketalk::routes::item::{create_item, get_item, get_items, hide_or_unhide_item, new_item_status};
+use ketalk::routes::item_image::{create_upload_presigned_url, update_status};
 use ketalk::routes::room::{create_room, get_user_rooms, join_room};
 use ketalk::routes::users::{get_user, get_user_items, signin, signup};
 use ketalk::s3_bucket::get_s3_bucket;
@@ -65,6 +64,10 @@ async fn main() -> std::io::Result<()> {
       .service(signin)
       .service(signup)
       .service(refresh_auth_token)
+      .service(create_category)
+      .service(get_categories)
+      .service(get_category)
+      .service(delete_category)
       // .service(web::scope("").wrap(bearer_middleware.clone()).service())
       .service(
         web::scope("")

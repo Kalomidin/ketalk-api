@@ -1,6 +1,6 @@
 -- Your SQL goes here
 -- table to store media files of an item
-CREATE TABLE item_document (
+CREATE TABLE item_image (
   id bigserial NOT NULL PRIMARY KEY,
   key VARCHAR NOT NULL,
   item_id bigint NOT NULL  REFERENCES item(id),

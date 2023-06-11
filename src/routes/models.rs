@@ -1,17 +1,20 @@
 use serde::{Deserialize, Serialize};
 
+type Timestamp = i64;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct NewUserRequest {
-  pub user_name: String,
+  pub name: String,
   pub phone_number: String,
+  pub password: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct NewUserResponse {
-  pub user_id: i64,
-  pub user_name: String,
+  pub id: i64,
+  pub name: String,
   pub phone_number: String,
   pub auth_token: String,
   pub refresh_token: String,
@@ -21,7 +24,7 @@ pub struct NewUserResponse {
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct GetUserResponse {
   pub id: i64,
-  pub user_name: String,
+  pub name: String,
   pub phone_number: String,
 }
 
@@ -76,9 +79,9 @@ pub struct UserRoom {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
-pub struct SiginRequest {
-  pub user_name: String,
+pub struct SignInRequest {
   pub phone_number: String,
+  pub password: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,10 +123,10 @@ pub struct ItemImage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct CreateItemRequest {
+  pub title: String,
   pub description: String,
-  pub details: String,
+  pub negotiable: bool,
   pub price: i64,
-  pub negotiable: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,13 +134,13 @@ pub struct CreateItemRequest {
 pub struct CreateItemResponse {
   pub id: i64,
   pub description: String,
-  pub created_at: String,
+  pub created_at: Timestamp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct ItemImagesUpdateStatusToUploadedRequest {
-  pub document_ids: Vec<i64>,
+  pub ids: Vec<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -150,7 +153,7 @@ pub struct GetItemsResponse {
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct GetItemResponse {
   pub id: i64,
-  pub details: String,
+  pub title: String,
   pub description: String,
   pub price: i64,
   pub owner_id: i64,
@@ -158,30 +161,50 @@ pub struct GetItemResponse {
   pub message_count: i32,
   pub seen_count: i32,
   pub item_status: ItemStatus,
-  pub created_at: String,
-  pub cover_image_url: String,
+  pub created_at: Timestamp,
+  pub thumbnail: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct ItemResponse {
   pub id: i64,
-  pub details: String,
+  pub title: String,
   pub description: String,
   pub price: i64,
-  pub owner_id: i64,
-  pub owner_name: String,
-  pub owner_location: Option<Location>,
-  pub owner_image_url: String,
-  pub item_status: ItemStatus,
-  pub is_hidden: bool,
-  pub negotiable: bool,
+  pub owner: User,
   pub favorite_count: i32,
   pub message_count: i32,
   pub seen_count: i32,
-  pub created_at: String,
-  pub presigned_urls: Vec<String>,
+  pub is_user_favorite: bool,
+  pub created_at: Timestamp,
+  pub images: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct UserItemResponse {
+  pub id: i64,
+  pub title: String,
+  pub description: String,
+  pub price: i64,
+  pub user: User,
+  pub item_status: ItemStatus,
+  pub is_hidden: bool,
+  pub favorite_count: i32,
+  pub message_count: i32,
+  pub seen_count: i32,
+  pub created_at: Timestamp,
+  pub images: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct User {
+  pub id: i64,
+  pub name: String,
   pub location: Option<Location>,
+  pub avatar: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,8 +231,8 @@ pub struct UserItem {
   pub message_count: i32,
   pub item_status: ItemStatus,
   pub is_hidden: bool,
-  pub created_at: chrono::NaiveDateTime,
-  pub updated_at: chrono::NaiveDateTime,
+  pub created_at: Timestamp,
+  pub updated_at: Timestamp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -229,4 +252,11 @@ pub struct UpdateItemStatusRequest {
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct HideUnhideItemRequest {
   pub is_hidden: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct CreateCategoryRequest {
+  pub name: String,
+  pub avatar: String,
 }

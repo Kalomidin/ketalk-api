@@ -1,16 +1,17 @@
 use actix_web::{get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 
 use super::models::{
-  GetUserResponse, ItemStatus, NewUserRequest, NewUserResponse, SiginRequest, UserItem, UserItems,
+  GetUserResponse, ItemStatus, NewUserRequest, NewUserResponse, SignInRequest,
+  User as UserResponse, UserItem, UserItemResponse, UserItems,
 };
 use super::DbPool;
-use super::RouteError;
+use super::{route_error_handler, RouteError};
 use crate::auth::{create_jwt, get_new_refresh_token};
 use crate::repository::auth::insert_new_refresh_token;
-use crate::repository::document::get_docs_for_item;
-use crate::repository::user::{
-  get_user_by__username_and_phone_number, get_user_by_id, insert_new_user,
-};
+use crate::repository::item::{get_favorite_items, get_item_by_id};
+use crate::repository::item_image::get_docs_for_item;
+
+use crate::repository::user::{get_user_by_id, get_user_by_phone_number, insert_new_user};
 
 use crate::repository::item::get_items_by_user_id;
 use crate::routes::item::CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME;
@@ -23,18 +24,20 @@ pub async fn signup(
   println!("received create request: {:?}", form);
 
   // save the user into the db
-  let user_name = form.user_name.to_owned();
+  let user_name = form.name.to_owned();
   let phone_number = form.phone_number.to_owned();
+  let password = form.password.to_owned();
+
   let pool_cloned = pool.clone();
   let user = web::block(move || {
     if let Ok(mut conn) = pool_cloned.get() {
-      let user = insert_new_user(&mut conn, &user_name, &phone_number)?;
+      let user = insert_new_user(&mut conn, &user_name, &phone_number, &password)?;
       return Ok(user);
     }
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
   if let Ok(auth_token) = create_jwt(user.id) {
     // create new refresh token
@@ -48,11 +51,11 @@ pub async fn signup(
       return Err(RouteError::PoolingErr);
     })
     .await?
-    .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+    .map_err(|e| route_error_handler(e))?;
 
     Ok(HttpResponse::Ok().json(NewUserResponse {
-      user_id: user.id,
-      user_name: user.user_name,
+      id: user.id,
+      name: user.name,
       phone_number: user.phone_number,
       auth_token: auth_token,
       refresh_token: refresh_token.token,
@@ -65,25 +68,28 @@ pub async fn signup(
 #[post("/users/signin")]
 pub async fn signin(
   pool: web::Data<DbPool>,
-  form: web::Json<SiginRequest>,
+  form: web::Json<SignInRequest>,
 ) -> Result<HttpResponse, Error> {
-  println!("received sigin: {:?}", form);
+  log::info!("received sigin: {:?}", form);
 
   // save the user into the db
-  let user_name = form.user_name.to_owned();
   let phone_number = form.phone_number.to_owned();
+  let password = form.password.to_owned();
   let pool_cloned = pool.clone();
   let resp = web::block(move || {
     if let Ok(mut conn) = pool_cloned.get() {
-      let user = get_user_by__username_and_phone_number(&mut conn, &user_name, &phone_number)?;
+      let user = get_user_by_phone_number(&mut conn, &phone_number)?;
+      if user.password != password {
+        return Err(RouteError::InvalidPassword);
+      }
       if let Ok(auth_token) = create_jwt(user.id) {
         // create new refresh token
         let new_token = get_new_refresh_token();
         let refresh_token = insert_new_refresh_token(&mut conn, user.id, &new_token)?;
 
         return Ok(NewUserResponse {
-          user_id: user.id,
-          user_name: user.user_name,
+          id: user.id,
+          name: user.name,
           phone_number: user.phone_number,
           auth_token: auth_token,
           refresh_token: refresh_token.token,
@@ -95,7 +101,7 @@ pub async fn signin(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
   Ok(HttpResponse::Ok().json(resp))
 }
@@ -113,15 +119,15 @@ pub async fn get_user(pool: web::Data<DbPool>, req: HttpRequest) -> Result<HttpR
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
   Ok(HttpResponse::Ok().json(GetUserResponse {
     id: user.id,
-    user_name: user.user_name,
+    name: user.name,
     phone_number: user.phone_number,
   }))
 }
 
-#[get("/user/items")]
+#[get("/users/items")]
 pub async fn get_user_items(
   pool: web::Data<DbPool>,
   req: HttpRequest,
@@ -154,8 +160,8 @@ pub async fn get_user_items(
               message_count: item.message_count,
               item_status: item_status,
               is_hidden: item.is_hidden,
-              created_at: item.created_at,
-              updated_at: item.updated_at,
+              created_at: item.created_at.timestamp(),
+              updated_at: item.updated_at.timestamp(),
             });
             break;
           }
@@ -166,6 +172,116 @@ pub async fn get_user_items(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().json(UserItems { items: items }))
+}
+
+#[get("/users/items/{item_id}")]
+pub async fn get_user_item(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+  item_id: web::Path<i64>,
+) -> Result<HttpResponse, Error> {
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let resp = web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      let item = get_item_by_id(&mut conn, item_id.to_owned())?;
+      if item.owner_id != user_id {
+        return Err(RouteError::Unauthorized);
+      }
+      let user = get_user_by_id(&mut conn, item.owner_id)?;
+      let item_status = match item.item_status.as_str() {
+        "Active" => ItemStatus::Active,
+        "Sold" => ItemStatus::Sold,
+        _ => ItemStatus::Reserved,
+      };
+      let docs = get_docs_for_item(&mut conn, item.id)?;
+      let mut presigned_urls = vec![];
+      for doc in docs {
+        if doc.uploaded_to_cloud {
+          presigned_urls.push(format!(
+            "https://{}/{}",
+            CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, doc.key,
+          ));
+        }
+      }
+      return Ok(UserItemResponse {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        user: UserResponse {
+          id: item.owner_id,
+          name: user.name,
+          location: None,
+          avatar: "".to_string(),
+        },
+        favorite_count: item.favorite_count,
+        message_count: item.message_count,
+        item_status: item_status,
+        is_hidden: item.is_hidden,
+        seen_count: item.seen_count,
+        created_at: item.created_at.timestamp(),
+        images: presigned_urls,
+      });
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().json(resp))
+}
+
+#[get("/users/items/favorite")]
+pub async fn get_user_favorite_items(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let items = web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      let items = match get_favorite_items(&mut conn, user_id.to_owned()) {
+        Ok(items) => items,
+        Err(e) => {
+          return Ok(vec![]);
+        }
+      };
+      let mut resp = vec![];
+      for item in items {
+        let docs = get_docs_for_item(&mut conn, item.id)?;
+        for doc in docs {
+          if doc.is_cover && doc.uploaded_to_cloud {
+            let item_status = match item.item_status.as_str() {
+              "Active" => ItemStatus::Active,
+              "Sold" => ItemStatus::Sold,
+              _ => ItemStatus::Reserved,
+            };
+            resp.push(UserItem {
+              id: item.id,
+              item_name: item.description,
+              image: format!(
+                "https://{}/{}",
+                CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, doc.key,
+              ),
+              price: item.price,
+              favorite_count: item.favorite_count,
+              message_count: item.message_count,
+              item_status: item_status,
+              is_hidden: item.is_hidden,
+              created_at: item.created_at.timestamp(),
+              updated_at: item.updated_at.timestamp(),
+            });
+            break;
+          }
+        }
+      }
+      return Ok(resp);
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
   Ok(HttpResponse::Ok().json(UserItems { items: items }))
 }

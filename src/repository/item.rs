@@ -5,12 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::item as item_table;
 use crate::schema::item::dsl::*;
+use crate::schema::user_favorite::dsl::{user_favorite, user_id as user_favorite_user_id};
 
 #[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = item_table)]
 pub struct InsertItem {
+  pub title: String,
   pub description: String,
-  pub details: String,
   pub price: i64,
   pub negotiable: bool,
   pub owner_id: i64,
@@ -19,8 +20,8 @@ pub struct InsertItem {
 #[derive(Clone, Serialize, Deserialize, Queryable)]
 pub struct Item {
   pub id: i64,
+  pub title: String,
   pub description: String,
-  pub details: String,
   pub price: i64,
   pub negotiable: bool,
   pub owner_id: i64,
@@ -37,17 +38,17 @@ pub struct Item {
 pub fn insert_new_item(
   conn: &mut PgConnection,
   _owner_id: i64,
+  _title: String,
   _description: String,
-  _details: String,
   _price: i64,
   _negotiable: bool,
 ) -> Result<Item, DieselError> {
   let new_item = InsertItem {
     owner_id: _owner_id,
+    title: _title,
     description: _description,
-    details: _details,
-    price: _price,
     negotiable: _negotiable,
+    price: _price,
   };
 
   let resp = diesel::insert_into(item)
@@ -117,6 +118,21 @@ pub fn increment_message_count(conn: &mut PgConnection, item_id: i64) -> Result<
   Ok(())
 }
 
+pub fn update_favorite_count(
+  conn: &mut PgConnection,
+  item_id: i64,
+  count: i32,
+) -> Result<(), DieselError> {
+  let result = diesel::update(item)
+    .filter(deleted_at.is_null().and(id.eq(item_id)))
+    .set(favorite_count.eq(favorite_count + count))
+    .execute(conn);
+  if result.is_err() || result.unwrap() == 0 {
+    return Err(DieselError::NotFound);
+  }
+  Ok(())
+}
+
 pub fn hide_unhide_item(
   conn: &mut PgConnection,
   item_id: i64,
@@ -130,4 +146,20 @@ pub fn hide_unhide_item(
     return Err(DieselError::NotFound);
   }
   Ok(())
+}
+
+pub fn get_favorite_items(
+  conn: &mut PgConnection,
+  _user_id: i64,
+) -> Result<Vec<Item>, DieselError> {
+  let result = item
+    .inner_join(user_favorite)
+    .select(item::all_columns())
+    .filter(user_favorite_user_id.eq(_user_id).and(deleted_at.is_null()))
+    .load(conn)
+    .optional()?;
+  match result {
+    Some(val) => Ok(val),
+    None => Err(DieselError::NotFound),
+  }
 }

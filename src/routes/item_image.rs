@@ -1,5 +1,4 @@
 use actix_web::{post, web, Error, HttpMessage, HttpRequest, HttpResponse};
-use diesel::prelude::*;
 use s3::bucket::Bucket;
 
 use super::models::{
@@ -7,15 +6,15 @@ use super::models::{
   ItemImagesUpdateStatusToUploadedRequest,
 };
 use super::DbPool;
-use super::RouteError;
+use super::{route_error_handler, RouteError};
 use crate::helpers::get_timestamp_as_nano;
-use crate::repository::document::{insert_new_document, set_to_uploaded_to_cloud};
 use crate::repository::item::get_item_by_id;
+use crate::repository::item_image::{insert_new_image, set_to_uploaded_to_cloud};
 use crate::repository::user::get_user_by_id;
 
 const IMAGE_UPLOAD_EXPIRATION_SECONDS: u32 = 4000;
 
-#[post("/document/item/create")]
+#[post("/images/item/create")]
 pub async fn create_upload_presigned_url(
   pool: web::Data<DbPool>,
   bucket: web::Data<Bucket>,
@@ -38,9 +37,9 @@ pub async fn create_upload_presigned_url(
         return Err(RouteError::Unauthorized);
       }
 
-      // TODO: validate item does not exist already in the documents table
+      // TODO: validate item does not exist already in the item_image table
 
-      // insert documents
+      // insert images
       let mut resp: Vec<ItemImage> = vec![];
       for image in form.images.to_owned().into_iter() {
         let object_name = format!(
@@ -58,7 +57,7 @@ pub async fn create_upload_presigned_url(
         ) {
           Ok(url) => {
             let is_cover = image.is_cover.unwrap_or(false);
-            let item_document = insert_new_document(
+            let item_image = insert_new_image(
               &mut conn,
               user_id,
               item.id,
@@ -71,7 +70,7 @@ pub async fn create_upload_presigned_url(
               url: url,
               is_cover: is_cover,
               name: image.name,
-              id: item_document.id,
+              id: item_image.id,
             });
           }
           Err(_e) => {
@@ -86,12 +85,12 @@ pub async fn create_upload_presigned_url(
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
 
   Ok(HttpResponse::Ok().json(CreateItemImagesResponse { images: resp }))
 }
 
-#[post("/document/item/uploaded")]
+#[post("/images/item/uploaded")]
 pub async fn update_status(
   pool: web::Data<DbPool>,
   req: HttpRequest,
@@ -105,14 +104,14 @@ pub async fn update_status(
       // verify user exists the user
       get_user_by_id(&mut conn, user_id)?;
 
-      for document_id in form.document_ids.to_owned().into_iter() {
-        set_to_uploaded_to_cloud(&mut conn, document_id)?;
+      for image_id in form.ids.to_owned().into_iter() {
+        set_to_uploaded_to_cloud(&mut conn, image_id)?;
       }
       return Ok(());
     }
     return Err(RouteError::PoolingErr);
   })
   .await?
-  .map_err(actix_web::error::ErrorUnprocessableEntity)?;
+  .map_err(|e| route_error_handler(e))?;
   Ok(HttpResponse::Ok().body("OK"))
 }
