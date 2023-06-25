@@ -12,6 +12,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    geofence (id) {
+        id -> Int8,
+        name -> Varchar,
+        geofence_type -> Varchar,
+        parent_region_id -> Int8,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+        deleted_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     item (id) {
         id -> Int8,
         title -> Varchar,
@@ -24,6 +36,11 @@ diesel::table! {
         favorite_count -> Int4,
         message_count -> Int4,
         seen_count -> Int4,
+        size -> Float8,
+        weight -> Float8,
+        karat_id -> Int8,
+        category_id -> Int8,
+        geofence_id -> Int8,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
         deleted_at -> Nullable<Timestamptz>,
@@ -40,6 +57,18 @@ diesel::table! {
         uploaded_to_cloud -> Bool,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        deleted_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
+    karat (id) {
+        id -> Int8,
+        name -> Varchar,
+        description -> Varchar,
+        gold_purity -> Int4,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
         deleted_at -> Nullable<Timestamptz>,
     }
 }
@@ -110,6 +139,9 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(item -> category (category_id));
+diesel::joinable!(item -> geofence (geofence_id));
+diesel::joinable!(item -> karat (karat_id));
 diesel::joinable!(item -> users (owner_id));
 diesel::joinable!(item_image -> item (item_id));
 diesel::joinable!(item_image -> users (user_id));
@@ -124,13 +156,15 @@ diesel::joinable!(user_favorite -> item (item_id));
 diesel::joinable!(user_favorite -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    category,
-    item,
-    item_image,
-    message,
-    refresh_token,
-    room,
-    room_member,
-    user_favorite,
-    users,
+  category,
+  geofence,
+  item,
+  item_image,
+  karat,
+  message,
+  refresh_token,
+  room,
+  room_member,
+  user_favorite,
+  users,
 );

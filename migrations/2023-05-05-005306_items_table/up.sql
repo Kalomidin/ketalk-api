@@ -11,6 +11,11 @@ CREATE TABLE item (
   favorite_count int NOT NULL DEFAULT 0,
   message_count int NOT NULL DEFAULT 0,
   seen_count int NOT NULL DEFAULT 0,
+  size float NOT NULL,
+  weight float NOT NULL,
+  karat_id bigint NOT NULL REFERENCES karat(id),
+  category_id bigint NOT NULL REFERENCES category(id),
+  geofence_id bigint NOT NULL REFERENCES geofence(id),
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   deleted_at timestamp with time zone DEFAULT NULL

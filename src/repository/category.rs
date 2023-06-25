@@ -27,12 +27,12 @@ pub fn add_category(
   _name: String,
   _avatar: String,
 ) -> Result<Category, DieselError> {
-  let new_favor_item = InsertCategory {
+  let new_category = InsertCategory {
     name: _name,
     avatar: _avatar,
   };
   let resp = diesel::insert_into(category)
-    .values(&new_favor_item)
+    .values(&new_category)
     .get_result::<Category>(conn)?;
   return Ok(resp);
 }

@@ -66,7 +66,7 @@ pub struct GetUserRoomsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct UserRoom {
-  pub description: String,
+  pub title: String,
   pub last_message: String,
   pub last_message_time: chrono::NaiveDateTime,
   pub room_id: i64,
@@ -127,13 +127,17 @@ pub struct CreateItemRequest {
   pub description: String,
   pub negotiable: bool,
   pub price: i64,
+  pub size: f64,
+  pub weight: f64,
+  pub karat_id: i64,
+  pub category_id: i64,
+  pub geofence_id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
 pub struct CreateItemResponse {
   pub id: i64,
-  pub description: String,
   pub created_at: Timestamp,
 }
 
@@ -172,35 +176,22 @@ pub struct ItemResponse {
   pub title: String,
   pub description: String,
   pub price: i64,
-  pub owner: User,
-  pub favorite_count: i32,
-  pub message_count: i32,
-  pub seen_count: i32,
-  pub is_user_favorite: bool,
-  pub created_at: Timestamp,
-  pub images: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all(serialize = "camelCase"))]
-pub struct UserItemResponse {
-  pub id: i64,
-  pub title: String,
-  pub description: String,
-  pub price: i64,
-  pub user: User,
+  pub negotiable: bool,
+  pub owner: ItemOwner,
   pub item_status: ItemStatus,
   pub is_hidden: bool,
   pub favorite_count: i32,
   pub message_count: i32,
   pub seen_count: i32,
-  pub created_at: Timestamp,
+  pub is_user_favorite: bool,
   pub images: Vec<String>,
+  pub location: Option<Location>,
+  pub created_at: Timestamp,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all(serialize = "camelCase"))]
-pub struct User {
+pub struct ItemOwner {
   pub id: i64,
   pub name: String,
   pub location: Option<Location>,

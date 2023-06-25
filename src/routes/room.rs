@@ -27,10 +27,6 @@ pub async fn join_room(
   pool: Data<DbPool>,
   srv: Data<Addr<Lobby>>,
 ) -> Result<HttpResponse, Error> {
-  println!("join_room: ${}", room_id);
-  req.headers().iter().for_each(|(key, value)| {
-    println!("{}: {}", key, value.to_str().unwrap());
-  });
   // TODO: validate conversation id exists in db
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
@@ -67,7 +63,6 @@ pub async fn join_room(
 pub async fn get_user_rooms(pool: Data<DbPool>, req: HttpRequest) -> Result<HttpResponse, Error> {
   let ext = req.extensions();
   let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
-  println!("get_user_rooms: ${}", user_id);
 
   let pool_cloned = pool.clone();
   let resp = block(move || {
@@ -86,7 +81,7 @@ pub async fn get_user_rooms(pool: Data<DbPool>, req: HttpRequest) -> Result<Http
           let item = get_item_by_id(&mut conn, item_id)?;
           let cover_image_doc = get_cover_pic_for_item(&mut conn, item.id)?;
           resp.rooms.push(UserRoom {
-            description: item.description,
+            title: item.title,
             item_image_url: format!(
               "https://{}/{}",
               CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, cover_image_doc.key,
@@ -111,10 +106,7 @@ pub async fn get_user_rooms(pool: Data<DbPool>, req: HttpRequest) -> Result<Http
   .await?;
   match resp {
     Ok(rooms) => Ok(HttpResponse::Ok().json(rooms)),
-    Err(e) => {
-      println!("error: {:?}", e);
-      Ok(HttpResponse::InternalServerError().finish())
-    }
+    Err(e) => Ok(HttpResponse::InternalServerError().finish()),
   }
 }
 
@@ -124,7 +116,6 @@ pub async fn create_room(
   req: HttpRequest,
   form: Json<CreateRoomRequest>,
 ) -> Result<HttpResponse, Error> {
-  println!("creating new room");
   let secondary_user_id = form.secondary_user_id.clone();
   let item_id = form.item_id.clone();
   let ext = req.extensions();

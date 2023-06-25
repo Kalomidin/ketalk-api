@@ -1,4 +1,4 @@
-use actix_web::{delete, get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, web, Error, HttpResponse};
 use diesel::{
   prelude::*,
   r2d2::{self, ConnectionManager},
@@ -7,7 +7,7 @@ use diesel::{
 use super::models::CreateCategoryRequest;
 use super::DbPool;
 use super::{route_error_handler, RouteError};
-use crate::auth::{create_jwt, get_new_refresh_token};
+
 use crate::repository::category::{
   add_category, delete_category as repo_delete_category, get_by_name,
   get_categories as repo_get_categories,

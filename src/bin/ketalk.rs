@@ -11,10 +11,12 @@ use ketalk::repository::db::connection_manager;
 use ketalk::routes::auth::{logout, refresh_auth_token};
 use ketalk::routes::category::{create_category, delete_category, get_categories, get_category};
 use ketalk::routes::heartbeat::heartbeat;
-use ketalk::routes::item::{create_item, get_item, get_items, hide_or_unhide_item, new_item_status};
+use ketalk::routes::item::{
+  create_item, get_item, get_items, hide_or_unhide_item, new_item_status, update_favorite_status,
+};
 use ketalk::routes::item_image::{create_upload_presigned_url, update_status};
 use ketalk::routes::room::{create_room, get_user_rooms, join_room};
-use ketalk::routes::users::{get_user, get_user_items, signin, signup};
+use ketalk::routes::users::{get_user, get_user_favorite_items, get_user_items, signin, signup};
 use ketalk::s3_bucket::get_s3_bucket;
 use ketalk::ws::lobby::Lobby;
 
@@ -27,13 +29,6 @@ async fn main() -> std::io::Result<()> {
   let server_port: u16 = get_env("SERVER_PORT").parse().unwrap();
 
   let bucket = get_s3_bucket();
-
-  let my_local_ip = local_ip();
-  if let Ok(my_local_ip) = my_local_ip {
-    println!("This is my local IP address: {:?}", my_local_ip);
-  } else {
-    println!("Error getting local IP: {:?}", my_local_ip);
-  }
 
   // connect to postgres db
   let connection_manager = connection_manager();
@@ -84,7 +79,9 @@ async fn main() -> std::io::Result<()> {
           .service(get_item)
           .service(get_user_items)
           .service(new_item_status)
-          .service(hide_or_unhide_item),
+          .service(hide_or_unhide_item)
+          .service(update_favorite_status)
+          .service(get_user_favorite_items),
       )
   })
   .workers(2)

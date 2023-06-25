@@ -1,8 +1,10 @@
 pub mod auth;
 pub mod category;
 pub mod db;
+pub mod geofence;
 pub mod item;
 pub mod item_image;
+pub mod karat;
 pub mod message;
 pub mod room;
 pub mod room_member;

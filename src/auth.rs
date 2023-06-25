@@ -43,7 +43,7 @@ pub async fn validator(
   req: ServiceRequest,
   credentials: BearerAuth,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
-  println!("validator for path: {}", req.path());
+  println!("validating path: {}", req.path());
   let config = req
     .app_data::<Config>()
     .map(|data| data.clone())
@@ -53,7 +53,10 @@ pub async fn validator(
       req.request().extensions_mut().insert(res.user_id);
       Ok(req)
     }
-    Err(_) => Err((AuthenticationError::from(config).into(), req)),
+    Err(e) => {
+      println!("invalid token err: {}", e);
+      Err((AuthenticationError::from(config).into(), req))
+    }
   }
 }
 

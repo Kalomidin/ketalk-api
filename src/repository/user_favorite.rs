@@ -58,7 +58,7 @@ pub fn update_item_favorite_status(
   _is_favorite: bool,
 ) -> Result<(), DieselError> {
   let result = diesel::update(user_favorite)
-    .filter(id.eq(id))
+    .filter(user_id.eq(_user_id).and(item_id.eq(_item_id)))
     .set(is_favorite.eq(_is_favorite))
     .execute(conn);
   if result.is_err() || result.unwrap() == 0 {
