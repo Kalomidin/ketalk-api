@@ -120,6 +120,7 @@ pub async fn get_user(pool: web::Data<DbPool>, req: HttpRequest) -> Result<HttpR
     id: user.id,
     name: user.name,
     phone_number: user.phone_number,
+    avatar: "".to_owned(),
   }))
 }
 

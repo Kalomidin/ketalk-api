@@ -26,6 +26,7 @@ pub struct GetUserResponse {
   pub id: i64,
   pub name: String,
   pub phone_number: String,
+  pub avatar: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
