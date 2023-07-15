@@ -87,6 +87,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    purchase (id) {
+        id -> Int8,
+        buyer_id -> Int8,
+        seller_id -> Int8,
+        item_id -> Int8,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     refresh_token (id) {
         id -> Int8,
         user_id -> Int8,
@@ -148,6 +158,7 @@ diesel::joinable!(item_image -> item (item_id));
 diesel::joinable!(item_image -> users (user_id));
 diesel::joinable!(message -> room (room_id));
 diesel::joinable!(message -> users (sender_id));
+diesel::joinable!(purchase -> item (item_id));
 diesel::joinable!(refresh_token -> users (user_id));
 diesel::joinable!(room -> item (item_id));
 diesel::joinable!(room -> users (created_by));
@@ -163,6 +174,7 @@ diesel::allow_tables_to_appear_in_same_query!(
   item_image,
   karat,
   message,
+  purchase,
   refresh_token,
   room,
   room_member,

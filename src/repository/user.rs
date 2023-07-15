@@ -87,10 +87,7 @@ pub fn update_profile(
   Ok(())
 }
 
-pub fn delete_cover_image(
-  conn: &mut PgConnection,
-  user_id: i64,
-) -> Result<(), DieselError> {
+pub fn delete_cover_image(conn: &mut PgConnection, user_id: i64) -> Result<(), DieselError> {
   let deleted_cover_image: Option<String> = None;
   let result = diesel::update(users)
     .filter(id.eq(user_id))

@@ -16,7 +16,10 @@ use ketalk::routes::item::{
 };
 use ketalk::routes::item_image::{create_upload_presigned_url, update_status};
 use ketalk::routes::room::{create_room, get_user_rooms, join_room};
-use ketalk::routes::users::{get_user, get_presigned_url_for_cover_image, update_profile, delete_cover_image, get_user_favorite_items, get_user_items, signin, signup};
+use ketalk::routes::users::{
+  delete_cover_image, get_presigned_url_for_cover_image, get_user, get_user_favorite_items,
+  get_user_items, get_user_purchased_items, signin, signup, update_profile,
+};
 use ketalk::s3_bucket::get_s3_bucket;
 use ketalk::ws::lobby::Lobby;
 
@@ -82,7 +85,8 @@ async fn main() -> std::io::Result<()> {
           .service(get_presigned_url_for_cover_image)
           .service(update_profile)
           .service(delete_cover_image)
-          .service(get_user_favorite_items),
+          .service(get_user_favorite_items)
+          .service(get_user_purchased_items),
       )
   })
   .workers(2)

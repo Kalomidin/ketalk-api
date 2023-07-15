@@ -1,4 +1,4 @@
-use actix_web::{get, post, delete, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{delete, get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
 use s3::bucket;
 
 use super::models::{
@@ -9,12 +9,13 @@ use super::DbPool;
 use super::{route_error_handler, RouteError};
 use crate::auth::{create_jwt, get_new_refresh_token};
 use crate::repository::auth::insert_new_refresh_token;
-use crate::repository::item::get_favorite_items;
+use crate::repository::item::{get_favorite_items, get_purchased_items};
 use crate::repository::item_image::get_docs_for_item;
 
 use crate::helpers::get_timestamp_as_nano;
 use crate::repository::user::{
-  get_user_by_id, get_user_by_phone_number, insert_new_user, update_profile as repo_update_profile, delete_cover_image as repo_delete_cover_image,
+  delete_cover_image as repo_delete_cover_image, get_user_by_id, get_user_by_phone_number,
+  insert_new_user, update_profile as repo_update_profile,
 };
 
 use crate::repository::item::get_items_by_user_id;
@@ -127,7 +128,8 @@ pub async fn get_user(pool: web::Data<DbPool>, req: HttpRequest) -> Result<HttpR
   let avatar = if user.cover_image != None {
     format!(
       "https://{}/{}",
-      CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, user.cover_image.unwrap()
+      CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME,
+      user.cover_image.unwrap()
     )
   } else {
     "".to_owned()
@@ -241,6 +243,59 @@ pub async fn get_user_favorite_items(
   Ok(HttpResponse::Ok().json(UserItems { items: items }))
 }
 
+#[get("/users/items/purchase")]
+pub async fn get_user_purchased_items(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let items = web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      let items = match get_purchased_items(&mut conn, user_id.to_owned()) {
+        Ok(items) => items,
+        Err(e) => {
+          return Ok(vec![]);
+        }
+      };
+      let mut resp = vec![];
+      for item in items {
+        let docs = get_docs_for_item(&mut conn, item.id)?;
+        for doc in docs {
+          if doc.is_cover && doc.uploaded_to_cloud {
+            let item_status = match item.item_status.as_str() {
+              "Active" => ItemStatus::Active,
+              "Sold" => ItemStatus::Sold,
+              _ => ItemStatus::Reserved,
+            };
+            resp.push(UserItem {
+              id: item.id,
+              item_name: item.title,
+              image: format!(
+                "https://{}/{}",
+                CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, doc.key,
+              ),
+              price: item.price,
+              favorite_count: item.favorite_count,
+              message_count: item.message_count,
+              item_status: item_status,
+              is_hidden: item.is_hidden,
+              created_at: item.created_at.timestamp(),
+              updated_at: item.updated_at.timestamp(),
+            });
+            break;
+          }
+        }
+      }
+      return Ok(resp);
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().json(UserItems { items: items }))
+}
+
 #[get("/users/coverImage/presignedUrl")]
 pub async fn get_presigned_url_for_cover_image(
   req: HttpRequest,
@@ -256,7 +311,7 @@ pub async fn get_presigned_url_for_cover_image(
     None,
   ) {
     Ok(url) => {
-      return Ok(HttpResponse::Ok().json(CreatePresignedUrlResponse { 
+      return Ok(HttpResponse::Ok().json(CreatePresignedUrlResponse {
         url: url,
         image_name: object_name,
       }));

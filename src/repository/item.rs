@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::item as item_table;
 use crate::schema::item::dsl::*;
+use crate::schema::purchase::dsl::{
+  buyer_id as purchase_buyer_id, item_id as purchase_item_id, purchase,
+};
 use crate::schema::user_favorite::dsl::{user_favorite, user_id as user_favorite_user_id};
 use crate::schema::user_favorite::is_favorite;
 
@@ -181,6 +184,27 @@ pub fn get_favorite_items(
         .eq(_user_id)
         .and(is_favorite.eq(true))
         .and(deleted_at.is_null()),
+    )
+    .load(conn)
+    .optional()?;
+  match result {
+    Some(val) => Ok(val),
+    None => Err(DieselError::NotFound),
+  }
+}
+
+pub fn get_purchased_items(
+  conn: &mut PgConnection,
+  buyer_id: i64,
+) -> Result<Vec<Item>, DieselError> {
+  let result = item
+    .inner_join(purchase)
+    .select(item::all_columns())
+    .filter(
+      purchase_buyer_id
+        .eq(buyer_id)
+        .and(deleted_at.is_null())
+        .and(id.eq(purchase_item_id)),
     )
     .load(conn)
     .optional()?;
