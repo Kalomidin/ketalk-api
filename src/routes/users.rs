@@ -1,7 +1,9 @@
-use actix_web::{get, post, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use actix_web::{get, post, delete, web, Error, HttpMessage, HttpRequest, HttpResponse};
+use s3::bucket;
 
 use super::models::{
-  GetUserResponse, ItemStatus, NewUserRequest, NewUserResponse, SignInRequest, UserItem, UserItems,
+  CreatePresignedUrlResponse, GetUserResponse, ItemStatus, NewUserRequest, NewUserResponse,
+  SignInRequest, UpdateProfileRequest, UserItem, UserItems,
 };
 use super::DbPool;
 use super::{route_error_handler, RouteError};
@@ -10,10 +12,16 @@ use crate::repository::auth::insert_new_refresh_token;
 use crate::repository::item::get_favorite_items;
 use crate::repository::item_image::get_docs_for_item;
 
-use crate::repository::user::{get_user_by_id, get_user_by_phone_number, insert_new_user};
+use crate::helpers::get_timestamp_as_nano;
+use crate::repository::user::{
+  get_user_by_id, get_user_by_phone_number, insert_new_user, update_profile as repo_update_profile, delete_cover_image as repo_delete_cover_image,
+};
 
 use crate::repository::item::get_items_by_user_id;
 use crate::routes::item::CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME;
+use s3::bucket::Bucket;
+
+const IMAGE_UPLOAD_EXPIRATION_SECONDS: u32 = 4000;
 
 #[post("/users/signup")]
 pub async fn signup(
@@ -116,11 +124,19 @@ pub async fn get_user(pool: web::Data<DbPool>, req: HttpRequest) -> Result<HttpR
   })
   .await?
   .map_err(|e| route_error_handler(e))?;
+  let avatar = if user.cover_image != None {
+    format!(
+      "https://{}/{}",
+      CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME, user.cover_image.unwrap()
+    )
+  } else {
+    "".to_owned()
+  };
   Ok(HttpResponse::Ok().json(GetUserResponse {
     id: user.id,
     name: user.name,
     phone_number: user.phone_number,
-    avatar: "".to_owned(),
+    avatar: avatar,
   }))
 }
 
@@ -223,4 +239,74 @@ pub async fn get_user_favorite_items(
   .await?
   .map_err(|e| route_error_handler(e))?;
   Ok(HttpResponse::Ok().json(UserItems { items: items }))
+}
+
+#[get("/users/coverImage/presignedUrl")]
+pub async fn get_presigned_url_for_cover_image(
+  req: HttpRequest,
+  bucket: web::Data<Bucket>,
+) -> Result<HttpResponse, Error> {
+  // create presigned url for the user and respond back
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let object_name = format!("images/{0}/{1}", user_id, get_timestamp_as_nano(),);
+  match bucket.presign_put(
+    format!("{0}", &object_name),
+    IMAGE_UPLOAD_EXPIRATION_SECONDS,
+    None,
+  ) {
+    Ok(url) => {
+      return Ok(HttpResponse::Ok().json(CreatePresignedUrlResponse { 
+        url: url,
+        image_name: object_name,
+      }));
+    }
+    Err(_e) => {
+      // just ask from user to reupload again
+      return Err(route_error_handler(RouteError::InternalErr));
+    }
+  };
+}
+
+#[post("/users/update")]
+pub async fn update_profile(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+  form: web::Json<UpdateProfileRequest>,
+) -> Result<HttpResponse, Error> {
+  // create presigned url for the user and respond back
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let new_cover_image = form.image.to_owned();
+  let new_name = form.name.to_owned();
+  web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      repo_update_profile(&mut conn, user_id, new_cover_image, new_name)?;
+      return Ok(());
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().body("OK"))
+}
+
+#[delete("/users/coverImage")]
+pub async fn delete_cover_image(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+  // create presigned url for the user and respond back
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      repo_delete_cover_image(&mut conn, user_id)?;
+      return Ok(());
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().body("OK"))
 }

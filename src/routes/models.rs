@@ -252,3 +252,17 @@ pub struct CreateCategoryRequest {
   pub name: String,
   pub avatar: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct CreatePresignedUrlResponse {
+  pub url: String,
+  pub image_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct UpdateProfileRequest {
+  pub image: Option<String>,
+  pub name: Option<String>,
+}

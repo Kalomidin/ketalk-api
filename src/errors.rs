@@ -15,6 +15,7 @@ pub enum ServiceError {
 
 impl ResponseError for ServiceError {
   fn error_response(&self) -> HttpResponse {
+    println!("error_response: {}", self);
     match self {
       ServiceError::InternalServerError => {
         HttpResponse::InternalServerError().json("Internal Server Error, Please try later")

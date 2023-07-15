@@ -4,6 +4,7 @@ CREATE TABLE users (
   name VARCHAR NOT NULL,
   password VARCHAR NOT NULL,
   phone_number VARCHAR NOT NULL,
+  cover_image VARCHAR NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
   unique(phone_number)

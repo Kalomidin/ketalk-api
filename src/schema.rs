@@ -134,6 +134,7 @@ diesel::table! {
         name -> Varchar,
         password -> Varchar,
         phone_number -> Varchar,
+        cover_image -> Nullable<Varchar>,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }
