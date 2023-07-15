@@ -4,8 +4,9 @@ use actix_web::{get, post, web, web::Path, Error, HttpMessage, HttpRequest, Http
 use s3::bucket::Bucket;
 
 use super::models::{
-  CreateItemRequest, CreateItemResponse, GetItemResponse, GetItemsResponse, HideUnhideItemRequest,
-  ItemOwner, ItemResponse, ItemStatus, UpdateItemStatusRequest,
+  Buyer, Buyers, CreateItemRequest, CreateItemResponse, CreatePurchaseRequest, GetItemResponse,
+  GetItemsResponse, HideUnhideItemRequest, ItemOwner, ItemResponse, ItemStatus,
+  UpdateItemStatusRequest,
 };
 use super::DbPool;
 use super::{route_error_handler, RouteError};
@@ -16,10 +17,12 @@ use crate::repository::user_favorite::{
 };
 
 use crate::repository::item::{
-  get_all_visible, get_item_by_id, hide_unhide_item, insert_new_item, update_favorite_count,
-  update_item_status,
+  create_purchase as repo_create_purchase, get_all_visible, get_item_by_id, hide_unhide_item,
+  insert_new_item, update_favorite_count, update_item_status, get_purchase_for_item,
 };
+use crate::repository::room_member::get_all_buyers_for_item;
 use crate::repository::user::{self, get_user_by_id};
+use crate::schema::item::owner_id;
 
 use log::warn;
 
@@ -158,6 +161,11 @@ pub async fn get_item(
         "Sold" => ItemStatus::Sold,
         _ => ItemStatus::Reserved,
       };
+      let buyer_id = match get_purchase_for_item(&mut conn, item.id) {
+        Ok(purchase) => Some(purchase.buyer_id),
+        Err(_) => None,
+      };
+
       let mut resp = ItemResponse {
         id: item.id,
         price: item.price,
@@ -179,6 +187,7 @@ pub async fn get_item(
         location: None,
         created_at: item.created_at.timestamp(),
         images: vec![],
+        buyer_id,
       };
       let docs = get_docs_for_item(&mut conn, item.id)?;
       if docs.len() == 0 {
@@ -279,6 +288,67 @@ pub async fn update_favorite_status(
       }
       let count = if is_favorite { 1 } else { -1 };
       update_favorite_count(&mut conn, *item_id, count)?;
+      return Ok(());
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().body("OK"))
+}
+
+// item buyers are all users who started a chat with the item owner
+#[get("/items/{item_id}/buyers")]
+pub async fn get_item_buyers(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+  item_id: Path<i64>,
+) -> Result<HttpResponse, Error> {
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let resp = web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      let buyers = get_all_buyers_for_item(&mut conn, item_id.to_owned(), user_id)?;
+      let mut resp = vec![];
+      for buyer in buyers {
+        let avatar = if buyer.user_image != None {
+          Some(format!(
+            "https://{}/{}",
+            CLOUD_FRONT_DISTRIBUTION_DOMAIN_NAME,
+            buyer.user_image.unwrap()
+          ))
+        } else {
+          None
+        };
+        resp.push(Buyer {
+          id: buyer.id,
+          name: buyer.user_name,
+          avatar,
+          last_messaged_at: buyer.last_joined_at.timestamp(),
+        });
+      }
+      return Ok(Buyers { buyers: resp });
+    }
+    return Err(RouteError::PoolingErr);
+  })
+  .await?
+  .map_err(|e| route_error_handler(e))?;
+  Ok(HttpResponse::Ok().json(resp))
+}
+
+#[post("/items/{item_id}/purchase")]
+pub async fn create_purchase(
+  pool: web::Data<DbPool>,
+  req: HttpRequest,
+  item_id: Path<i64>,
+  form: Json<CreatePurchaseRequest>,
+) -> Result<HttpResponse, Error> {
+  let ext = req.extensions();
+  let user_id: i64 = ext.get::<i64>().unwrap().to_owned();
+  let buyer_id = form.buyer_id;
+  web::block(move || {
+    if let Ok(mut conn) = pool.get() {
+      repo_create_purchase(&mut conn, buyer_id, user_id, item_id.to_owned())?;
       return Ok(());
     }
     return Err(RouteError::PoolingErr);

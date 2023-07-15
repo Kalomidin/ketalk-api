@@ -5,10 +5,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::item as item_table;
 use crate::schema::item::dsl::*;
+use crate::schema::purchase as purchase_table;
 use crate::schema::purchase::dsl::{
   buyer_id as purchase_buyer_id, item_id as purchase_item_id, purchase,
 };
-use crate::schema::user_favorite::dsl::{user_favorite, user_id as user_favorite_user_id};
+use crate::schema::user_favorite::dsl::{
+  item_id as user_favorite_item_id, user_favorite, user_id as user_favorite_user_id,
+};
 use crate::schema::user_favorite::is_favorite;
 
 #[derive(Clone, Serialize, Deserialize, Insertable)]
@@ -47,6 +50,23 @@ pub struct Item {
   pub created_at: NaiveDateTime,
   pub updated_at: NaiveDateTime,
   pub deleted_at: Option<NaiveDateTime>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Queryable)]
+pub struct Purchase {
+  pub id: i64,
+  pub buyer_id: i64,
+  pub seller_id: i64,
+  pub item_id: i64,
+  pub created_at: NaiveDateTime,
+}
+
+#[derive(Clone, Serialize, Deserialize, Insertable)]
+#[diesel(table_name = purchase_table)]
+pub struct CreatePurchase {
+  pub buyer_id: i64,
+  pub seller_id: i64,
+  pub item_id: i64,
 }
 
 pub fn insert_new_item(
@@ -180,13 +200,43 @@ pub fn get_favorite_items(
     .inner_join(user_favorite)
     .select(item::all_columns())
     .filter(
-      user_favorite_user_id
-        .eq(_user_id)
+      user_favorite_item_id
+        .eq(id)
+        .and(user_favorite_user_id.eq(_user_id))
         .and(is_favorite.eq(true))
         .and(deleted_at.is_null()),
     )
     .load(conn)
     .optional()?;
+  match result {
+    Some(val) => Ok(val),
+    None => Err(DieselError::NotFound),
+  }
+}
+
+pub fn create_purchase(
+  conn: &mut PgConnection,
+  _buyer_id: i64,
+  _seller_id: i64,
+  _item_id: i64,
+) -> Result<Purchase, DieselError> {
+  let new_purchase = CreatePurchase {
+    buyer_id: _buyer_id,
+    seller_id: _seller_id,
+    item_id: _item_id,
+  };
+
+  let resp = diesel::insert_into(purchase)
+    .values(&new_purchase)
+    .get_result(conn)?;
+  return Ok(resp);
+}
+
+pub fn get_purchase_for_item(
+  conn: &mut PgConnection,
+  _item_id: i64,
+) -> Result<Purchase, DieselError> {
+  let result = purchase.filter(purchase_item_id.eq(_item_id)).first(conn).optional()?;
   match result {
     Some(val) => Ok(val),
     None => Err(DieselError::NotFound),

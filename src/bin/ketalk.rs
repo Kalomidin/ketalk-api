@@ -12,7 +12,8 @@ use ketalk::routes::auth::{logout, refresh_auth_token};
 use ketalk::routes::category::{create_category, delete_category, get_categories, get_category};
 use ketalk::routes::heartbeat::heartbeat;
 use ketalk::routes::item::{
-  create_item, get_item, get_items, hide_or_unhide_item, new_item_status, update_favorite_status,
+  create_item, create_purchase, get_item, get_item_buyers, get_items, hide_or_unhide_item,
+  new_item_status, update_favorite_status,
 };
 use ketalk::routes::item_image::{create_upload_presigned_url, update_status};
 use ketalk::routes::room::{create_room, get_user_rooms, join_room};
@@ -86,7 +87,9 @@ async fn main() -> std::io::Result<()> {
           .service(update_profile)
           .service(delete_cover_image)
           .service(get_user_favorite_items)
-          .service(get_user_purchased_items),
+          .service(get_user_purchased_items)
+          .service(get_item_buyers)
+          .service(create_purchase),
       )
   })
   .workers(2)

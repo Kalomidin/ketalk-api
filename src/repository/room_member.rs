@@ -6,12 +6,23 @@ use crate::helpers::new_naive_date;
 use crate::schema::room::dsl as room_dsl;
 use crate::schema::room_member as room_member_table;
 use crate::schema::room_member::dsl::*;
+use crate::schema::users::dsl::{
+  cover_image as user_image, id as user_id, name as user_name, users,
+};
 
 #[derive(Clone, Serialize, Deserialize, Insertable)]
 #[diesel(table_name = room_member_table)]
 pub struct InsertRoomMember {
   pub room_id: i64,
   pub member_id: i64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Queryable)]
+pub struct Buyer {
+  pub id: i64,
+  pub user_name: String,
+  pub user_image: Option<String>,
+  pub last_joined_at: chrono::NaiveDateTime,
 }
 
 #[derive(Clone, Serialize, Deserialize, Queryable)]
@@ -101,6 +112,37 @@ pub fn get_room_member(
     .optional()?;
   match cnv {
     Some(cnv) => Ok(cnv),
+    None => Err(diesel::result::Error::NotFound),
+  }
+}
+
+pub fn get_all_buyers_for_item(
+  conn: &mut PgConnection,
+  _item_id: i64,
+  owner_id: i64,
+) -> Result<Vec<Buyer>, DieselError> {
+  let result = room_member
+    .inner_join(
+      room_dsl::room.on(
+        room_dsl::id
+          .eq(room_id)
+          .and(room_dsl::item_id.eq(_item_id))
+          .and(room_dsl::deleted_at.is_null()),
+      ),
+    )
+    .inner_join(
+      users.on(
+        member_id
+          .eq(user_id)
+          .and(deleted_at.is_null())
+          .and(user_id.ne(owner_id)),
+      ),
+    )
+    .select((user_id, user_name, user_image, last_joined_at))
+    .load::<Buyer>(conn)
+    .optional()?;
+  match result {
+    Some(r) => Ok(r),
     None => Err(diesel::result::Error::NotFound),
   }
 }

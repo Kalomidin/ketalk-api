@@ -188,6 +188,7 @@ pub struct ItemResponse {
   pub images: Vec<String>,
   pub location: Option<Location>,
   pub created_at: Timestamp,
+  pub buyer_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -265,4 +266,25 @@ pub struct CreatePresignedUrlResponse {
 pub struct UpdateProfileRequest {
   pub image: Option<String>,
   pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct Buyer {
+  pub id: i64,
+  pub name: String,
+  pub avatar: Option<String>,
+  pub last_messaged_at: Timestamp,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "camelCase"))]
+pub struct Buyers {
+  pub buyers: Vec<Buyer>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct CreatePurchaseRequest {
+  pub buyer_id: i64,
 }
